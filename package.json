@@ -1,0 +1,41 @@
+{
+  "name": "kmsolrq",
+  "version": "1.0.0",
+  "description": "KMaps solr work queue",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "test": "nodeunit test",
+    "start": "node ./bin/www"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shanti-uva/kmsolrq.git"
+  },
+  "author": "ys2n@virginia.edu",
+  "license": "LGPL",
+  "bugs": {
+    "url": "https://github.com/shanti-uva/kmsolrq/issues"
+  },
+  "homepage": "https://github.com/shanti-uva/kmsolrq#readme",
+  "dependencies": {
+    "async": "^2.6.0",
+    "cookie-parser": "~1.4.3",
+    "debug": "~2.6.9",
+    "express": "~4.16.0",
+    "hbs": "~4.0.1",
+    "http-errors": "~1.6.2",
+    "kue": "^0.11.6",
+    "lodash": "^4.17.5",
+    "morgan": "~1.9.0",
+    "node-localstorage": "^1.3.1",
+    "solr-client": "^0.7.0",
+    "striptags": "^3.1.1",
+    "underscore": "^1.9.0",
+    "xml2js": "^0.4.19"
+  },
+  "devDependencies": {
+    "nodeunit": "^0.11.2",
+    "type-check": "latest"
+  }
+}
