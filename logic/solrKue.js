@@ -215,11 +215,6 @@ var createAssetEntry = exports.createAssetEntry =
 
           });
 
-
-
-
-
-
           //  The current "template for writing asset enries for kmaps".
           var doc = {
             "schema_version_i": SCHEMA_VERSION,
