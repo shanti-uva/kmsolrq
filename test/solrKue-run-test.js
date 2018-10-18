@@ -130,14 +130,14 @@ module.exports = testCase({
   "big run": function (test) {
     var queue = solrKue.createQueue();
     var qlist = [
-      "tree:terms",
       // "name:bumthang",
       // "name:Chukha",
       // "ancestor_uids_generic:(places-427 subjects-8260)",
       // "uid:places-637",
       // "name:lhasa",
       "tree:subjects",
-      "tree:places"
+      "tree:places",
+      // "tree:terms"
     ];
     var length = qlist.length;
     async.series(

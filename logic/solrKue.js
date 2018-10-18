@@ -11,7 +11,7 @@ const DEBUG = false;
 const DEFAULT_ROWS = 500;
 const DEFAULT_CONCURRENCY = 3;
 const FORCE_OVERWRITE = false;
-const SCHEMA_VERSION = 6;
+const SCHEMA_VERSION = 7;
 
 if (typeof localStorage === "undefined" || localStorage === null) {
   var LocalStorage = require('node-localstorage').LocalStorage;
@@ -196,7 +196,7 @@ var createAssetEntry = exports.createAssetEntry =
           var kmapList = lookupKmapIds(kmapids);
 
           // DERIVE kmapid_is from ancestors_uids_generic
-          var kmapid_is= _.map(kmapEntry.ancestor_uids_generic, function(x) {
+          var generateId = function(x) {
             var parts=x.split("-");
             var type = parts[0];
             var id = Number(parts[1]);
@@ -213,7 +213,10 @@ var createAssetEntry = exports.createAssetEntry =
             }
             return id;
 
-          });
+          };
+
+          var uid_i = generateId(type + "-" + id);
+          var kmapid_is= _.map(kmapEntry.ancestor_uids_generic, generateId);
 
           //  The current "template for writing asset enries for kmaps".
           var doc = {
@@ -222,6 +225,7 @@ var createAssetEntry = exports.createAssetEntry =
             "service": service,
             "id": id,
             "uid": uid,
+            "uid_i": uid_i,
             "url_html": config.baseurl + "/" + type + "/" + id + "/overview/nojs",
             "kmapid": kmapEntry.ancestor_uids_generic,
             "kmapid_is": kmapid_is,
