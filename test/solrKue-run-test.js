@@ -90,6 +90,9 @@ const KMASSETS_PREDEV_AUTH = {
   'solrVersion': '6.4.2'
 };
 
+
+// TODO: ys2n: need to fix service name, to have a more proper Idenitifier (per kmaps asset type).
+
 var configSet = {
   "read_client" :solr.createClient(KMTERMS_PREDEV_UNAUTH),
   "write_client":solr.createClient(KMASSETS_PREDEV_AUTH),
@@ -127,13 +130,13 @@ module.exports = testCase({
   "big run": function (test) {
     var queue = solrKue.createQueue();
     var qlist = [
-      "name:bumthang",
-      "name:Chukha",
-      "ancestor_uids_generic:(places-427 subjects-8260)",
-      "uid:places-637",
-      "name:lhasa",
+      "tree:terms",
+      // "name:bumthang",
+      // "name:Chukha",
+      // "ancestor_uids_generic:(places-427 subjects-8260)",
+      // "uid:places-637",
+      // "name:lhasa",
       "tree:subjects",
-      // "tree:terms",
       "tree:places"
     ];
     var length = qlist.length;

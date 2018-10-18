@@ -11,7 +11,7 @@ const DEBUG = false;
 const DEFAULT_ROWS = 500;
 const DEFAULT_CONCURRENCY = 3;
 const FORCE_OVERWRITE = false;
-const SCHEMA_VERSION = 5;
+const SCHEMA_VERSION = 6;
 
 if (typeof localStorage === "undefined" || localStorage === null) {
   var LocalStorage = require('node-localstorage').LocalStorage;
@@ -228,6 +228,9 @@ var createAssetEntry = exports.createAssetEntry =
             "kmapid_strict": [ kmapEntry.uid ],
             "text": text,
             "names_txt": names,
+            "name_autocomplete": kmapEntry.names_autocomplete,
+            "name_tibt": kmapEntry.name_tibt,
+            "name_latin": kmapEntry.name_latin,
             "title": header,
             "feature_types_ss": feature_types,
             "ancestors_txt": kmapEntry.ancestors,
@@ -261,6 +264,8 @@ var createAssetEntry = exports.createAssetEntry =
         },
         function (doc, next) {
 
+          // Currently a NULL function
+
           // xml2js.parseString(kmapEntry.caption_eng, {
           //   valueProcessors: [
           //     function (value, name) {
@@ -279,7 +284,7 @@ var createAssetEntry = exports.createAssetEntry =
         }
       ],
       function (err, doc) {
-        if (doc.caption) {
+        if(doc.caption) {
           if(DEBUG) console.log("GOT: " + doc.uid + " " + doc.title);
           // console.dir(doc);
         }
@@ -297,28 +302,18 @@ var writeAssetDoc = exports.writeAssetDoc =
     var write_client = config.write_client;
     // console.error("WRITING ASSET CLIENT: " + write_client);
     // console.error("WRITING ASSET CONFIG: " + JSON.stringify(config, undefined, 2));
-
-
     var overwrite = function (newdoc, olddoc) {
       if (FORCE_OVERWRITE) {
         return true;
       }
-
       // console.log ("newdoc schema version: " + newdoc.schema_version_i);
       // console.log ("olddoc schema version: " + olddoc.schema_version_i);
-
       return (newdoc.schema_version_i > olddoc.schema_version_i);
     };
 
     var query = write_client.createQuery().df("uid").q(new_doc.uid).rows(1).start(0);
 
-    // console.log("OVERWRITE QUERY")
-    // console.dir(query);
-    // console.dir(write_client);
-
-
     //  TODO: refactor to use waterfall and retry BOTH queries...
-
 
     var add_retry = async.retryable(
       {
