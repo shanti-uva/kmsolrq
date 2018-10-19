@@ -11,7 +11,7 @@ const DEBUG = false;
 const DEFAULT_ROWS = 500;
 const DEFAULT_CONCURRENCY = 3;
 const FORCE_OVERWRITE = false;
-const SCHEMA_VERSION = 8;
+const SCHEMA_VERSION = 9;
 
 if (typeof localStorage === "undefined" || localStorage === null) {
   var LocalStorage = require('node-localstorage').LocalStorage;
@@ -156,6 +156,7 @@ var createAssetEntry = exports.createAssetEntry =
           var id = kmapEntry.uid.split("\-")[1];
 
           var prefix = (service !== "prod")?config.service + "_":""
+          prefix = "";
           var uid = prefix + kmapEntry.uid;
 
           var kmapProps = Object.entries(kmapEntry);
