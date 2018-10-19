@@ -11,7 +11,7 @@ const DEBUG = false;
 const DEFAULT_ROWS = 500;
 const DEFAULT_CONCURRENCY = 3;
 const FORCE_OVERWRITE = false;
-const SCHEMA_VERSION = 7;
+const SCHEMA_VERSION = 8;
 
 if (typeof localStorage === "undefined" || localStorage === null) {
   var LocalStorage = require('node-localstorage').LocalStorage;
@@ -232,7 +232,7 @@ var createAssetEntry = exports.createAssetEntry =
             "kmapid_strict": [ kmapEntry.uid ],
             "text": text,
             "names_txt": names,
-            "name_autocomplete": kmapEntry.names_autocomplete,
+            "name_autocomplete": kmapEntry.name_autocomplete,
             "name_tibt": kmapEntry.name_tibt,
             "name_latin": kmapEntry.name_latin,
             "title": header,
