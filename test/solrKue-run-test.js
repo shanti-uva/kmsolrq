@@ -94,10 +94,16 @@ const KMASSETS_PREDEV_AUTH = {
 // TODO: ys2n: need to fix service name, to have a more proper Idenitifier (per kmaps asset type).
 
 var configSet = {
-  "read_client" :solr.createClient(KMTERMS_PREDEV_UNAUTH),
-  "write_client":solr.createClient(KMASSETS_PREDEV_AUTH),
-  "service_name":"predev",
-  "baseurl": "https://mandala-predev.shanti.virginia.edu",
+  "read_client" :solr.createClient(KMTERMS_DEV_UNAUTH),
+  "write_client":solr.createClient(KMASSETS_DEV_AUTH),
+  "service_name":"dev",
+  "baseurl": "https://mandala-dev.shanti.virginia.edu",
+//  "write_user": "solrprod",
+//  "write_pass": "QiscMU5ho2q"
+//  "read_client" :solr.createClient(KMTERMS_DEV_UNAUTH),
+// "write_client":solr.createClient(KMASSETS_DEV_AUTH),
+//  "service_name":"dev",
+//  "baseurl": "https://mandala-dev.shanti.virginia.edu",
   "write_user": "solradmin",
   "write_pass": "IdskBsk013"
 }
@@ -135,9 +141,9 @@ module.exports = testCase({
       // "ancestor_uids_generic:(places-427 subjects-8260)",
       // "uid:places-637",
       // "name:lhasa",
-      "tree:subjects",
-      "tree:places",
-      // "tree:terms"
+      // "tree:subjects",
+      // "tree:places",
+      "tree:terms"
     ];
     var length = qlist.length;
     async.series(

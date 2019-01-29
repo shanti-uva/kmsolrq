@@ -11,7 +11,7 @@ const DEBUG = false;
 const DEFAULT_ROWS = 500;
 const DEFAULT_CONCURRENCY = 3;
 const FORCE_OVERWRITE = false;
-const SCHEMA_VERSION = 10;
+const SCHEMA_VERSION = 12;
 
 if (typeof localStorage === "undefined" || localStorage === null) {
   var LocalStorage = require('node-localstorage').LocalStorage;
@@ -194,6 +194,12 @@ var createAssetEntry = exports.createAssetEntry =
           } else if (kmapEntry.kmapid) {
             kmapids = kmapEntry.kmapid;
           }
+
+          // add other relateds
+          if (kmapEntry.associated_subject_ids) {
+              kmapids = _.uniq(_.concat(kmapids,kmapEntry.associated_subject_ids));
+          }
+
           var kmapList = lookupKmapIds(kmapids);
 
           // DERIVE kmapid_is from ancestors_uids_generic
@@ -377,9 +383,10 @@ var writeAssetDoc = exports.writeAssetDoc =
       // console.log( "OVERWRITE "  + new_doc.uid + ": " + overwrite(new_doc, old_doc));
 
       if (!existing.response.numFound || overwrite(new_doc, existing.response.docs[0])) {
+
+
+
         console.error("WRITING ASSET DOC: " + new_doc.uid + ": " + JSON.stringify(new_doc.title));
-
-
         add_retry(new_doc, function (err, obj) {
           if (err) {
             console.error("ERROR: " + JSON.stringify(err) + " " + JSON.stringify(obj));
@@ -438,12 +445,22 @@ var processQueue = exports.processQueue =
       async.waterfall(
         [
           function (next) {
+
+
+
+            // getTcuEntries()
+
+
+
             getKmapEntries(read_client, job.data.query, job.data.rows, job.data.start, next);
           },
           function (entries, next) {
             counter.setCount(entries.length);
             async.concat(entries,
               function (kmapEntry, next) {
+
+                // createTcuAssetEntry()
+
                 createAssetEntry(kmapEntry, config, next);
               },
               next
@@ -523,6 +540,14 @@ var XgenerateJobs = exports.XgenerateJobs =
       })
   };
 
+
+
+
+
+
+
+//   NEXT:  EXAMINE THIS FUNCTION TO SEE IF IT SUFFICES FOR GENERATING THE CORRECT JOB SPECS FOR TCU's!
+
 var generateJobspecs = exports.generateJobspecs =
   function (config, query, callback) {
     var client = config.read_client;
@@ -530,9 +555,6 @@ var generateJobspecs = exports.generateJobspecs =
     var q = client.createQuery().q(query);
     client.search(q, function (err, results) {
       if (err) {
-        // console.error(client);
-        // console.error(q);
-        // console.error("WHAT THE HELL! " + JSON.stringify(err, undefined, 2));
         callback(err);
       } else {
         var num = results.response.numFound;
