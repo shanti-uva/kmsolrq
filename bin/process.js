@@ -1,4 +1,4 @@
-const sq = require('../logic/solrKue.js');
+const sq = require('../logic/solrWriteKmapAssetKue.js');
 
 var queue;
 

@@ -1,5 +1,5 @@
 var testCase = require('nodeunit').testCase;
-var solrKue = require('../logic/solrKue.js');
+var solrKue = require('../logic/solrWriteKmapAssetKue.js');
 var solr = require('solr-client');
 const KMTERMS_DEV_UNAUTH = {
   'host': 'ss251856-us-east-1-aws.measuredsearch.com',

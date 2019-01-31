@@ -1,5 +1,7 @@
 var testCase = require('nodeunit').testCase;
-var solrKue = require('../logic/solrKue.js');
+var updateAssetKue = require('../logic/solrUpdateAssetIndexKeyKue.js');
+var createAssetKue = require('../logic/solrWriteKmapAssetKue.js');
+var kmapsKue = require('../logic/solrWriteKmapAssetKue.js');
 var solr = require('solr-client');
 var async = require('async');
 var kue = require('kue');
@@ -8,7 +10,7 @@ var _ = require('lodash');
 const TIMEOUT = 50000;
 const CHECK_DELAY = 1000;
 const REVERSE = false;
-const SHUFFLE = true;
+const SHUFFLE = false;
 
 const KMTERMS_DEV_UNAUTH = {
   'host': 'ss251856-us-east-1-aws.measuredsearch.com',
@@ -98,12 +100,6 @@ var configSet = {
   "write_client":solr.createClient(KMASSETS_DEV_AUTH),
   "service_name":"dev",
   "baseurl": "https://mandala-dev.shanti.virginia.edu",
-//  "write_user": "solrprod",
-//  "write_pass": "QiscMU5ho2q"
-//  "read_client" :solr.createClient(KMTERMS_DEV_UNAUTH),
-// "write_client":solr.createClient(KMASSETS_DEV_AUTH),
-//  "service_name":"dev",
-//  "baseurl": "https://mandala-dev.shanti.virginia.edu",
   "write_user": "solradmin",
   "write_pass": "IdskBsk013"
 }
@@ -134,7 +130,7 @@ var config = {
 
 module.exports = testCase({
   "big run": function (test) {
-    var queue = solrKue.createQueue();
+    var queue = createAssetKue.createQueue();
     var qlist = [
       // "name:bumthang",
       // "name:Chukha",
@@ -173,30 +169,27 @@ module.exports = testCase({
         },
         function (done) {
 
-          console.error("qlist: " + JSON.stringify(qlist));
+        console.error("qlist: " + JSON.stringify(qlist));
 
-          async.map(qlist, function (q, next) {
-              console.error("### calling generateJobspecs with " + q + " " + JSON.stringify(arguments));
-              solrKue.generateJobspecs(config, q, function (err, subquerylist) {
-                console.error("mapping with " + subquerylist);
+        async.map(qlist, function (q, next) {
+            console.error("### calling generateJobspecs with " + q + " " + JSON.stringify(arguments));
+            kmapsKue.generateJobspecs(config, q, function (err, subquerylist) {
+              console.error("mapping with " + subquerylist);
 
-                if (REVERSE) {
-                  subquerylist = _.reverse(subquerylist);
-                }
+              if (REVERSE) {
+                subquerylist = _.reverse(subquerylist);
+              }33
 
-                if (SHUFFLE) {
-                  subquerylist = _.shuffle(subquerylist);
-                }
+              if (SHUFFLE) {
+                subquerylist = _.shuffle(subquerylist);
+              }
 
+              async.map(subquerylist,
 
-                async.map(subquerylist,
-
-                  function (query, next2) {
+                function (query, next2) {
                   console.error("### calling addJob with " + JSON.stringify(query));
-                  solrKue.addJob(queue, query, function (err, ret) {
-
+                  createAssetKue.addJob(queue, query, function (err, ret) {
                     console.error("CALLBACK FOR " + JSON.stringify(query));
-
                     if (err) {
                       console.error("error object returned " + err);
                       next2(err);
@@ -208,98 +201,257 @@ module.exports = testCase({
                     }
                   });
                 },
-                  function(err, ret) {
-                    console.error(err);
-                    console.error("ret: " + ret);
-                    next(err,ret);
-                  }
-                );
-              });
-            },
-
-            function (err, list) {
-              console.error("done with Queueing!")
-              if (err) console.error(err);
-              console.dir(list);
-              done();
+                function(err, ret) {
+                  console.error(err);
+                  console.error("ret: " + ret);
+                  next(err,ret);
+                }
+              );
             });
-        },
-        function (done) {
-          // process the queue
-          console.error("processing the queue!");
-          solrKue.processQueue(config, queue, function (err, ret) {
-            console.log("processed: " + ret);
+          },
+
+          function (err, list) {
+            console.error("done with Queueing!")
+            if (err) console.error(err);
+            console.dir(list);
+            done();
+          });
+      },
+      function (done) {
+        // process the queue
+        console.error("processing the queue!");
+        createAssetKue.processQueue(config, queue, function (err, ret) {
+          console.log("processed: " + ret);
+          if (err) {
+            test.ok(false);
+          } else {
+            test.ok(true);
+            // NEED TO VERIFY THE RESULTS!!!!!!!
+          }
+        });
+        test.expect(length + 1);
+
+        var shutdown = function () {
+          queue.shutdown(function (err, ret) {
             if (err) {
-              test.ok(false);
-            } else {
-              test.ok(true);
-              // NEED TO VERIFY THE RESULTS!!!!!!!
+              console.error("error: " + err);
+            }
+            if (ret) {
+              console.error("return: " + ret);
+            }
+            console.log('[ All jobs finished. Kue is shut down. ]');
+            test.done();
+          });
+        };
+
+        var checkCount = function() {
+          var count = 0;
+          var counter = function() {
+            count = count + 1;
+            return count;
+          }
+          return counter;
+        }();
+
+        var checkforShutdown = setInterval(function () {
+          queue.inactiveCount(function (err, queued) {
+            var checks = checkCount();
+            if (checks % 10 === 0) {
+              var read_host = config.read_client.options.host;
+              var read_core = config.read_client.options.core;
+              var write_host = config.write_client.options.host;
+              var write_core = config.write_client.options.core;
+              console.error("checkforshutdown " + new Date().toISOString() + " [ inactives: " + queued + "\terr: " + err + "]  checkcount: " + checks + "(read: " + read_host + " " + read_core + " write: " + write_host + " " + write_core);
+
+
+            }
+
+            if (queued === 0) {
+              queue.activeCount(function (err, actives) {
+                console.error("checkforshutdown [ activeCount: " + actives + "\terr: " + err + "]");
+                if (actives === 0) {
+                  shutdown();
+                  clearInterval(checkforShutdown);
+                }
+              });
             }
           });
-          test.expect(length + 1);
 
-          var shutdown = function () {
-            queue.shutdown(function (err, ret) {
-              if (err) {
-                console.error("error: " + err);
-              }
-              if (ret) {
-                console.error("return: " + ret);
-              }
-              console.log('[ All jobs finished. Kue is shut down. ]');
-              test.done();
-            });
-          };
+        }, CHECK_DELAY);
 
-          var checkCount = function() {
-            var count = 0;
-            var counter = function() {
-              count = count + 1;
-              return count;
-            }
-            return counter;
-          }();
+        // setInterval(function () {
+        //   console.error("TIMEOUT");
+        //   shutdown();
+        //   clearInterval(checkforShutdown);
+        // }, TIMEOUT);
 
-          var checkforShutdown = setInterval(function () {
-            queue.inactiveCount(function (err, queued) {
-              var checks = checkCount();
-              if (checks % 10 === 0) {
-                var read_host = config.read_client.options.host;
-                var read_core = config.read_client.options.core;
-                var write_host = config.write_client.options.host;
-                var write_core = config.write_client.options.core;
-                console.error("checkforshutdown " + new Date().toISOString() + " [ inactives: " + queued + "\terr: " + err + "]  checkcount: " + checks + "(read: " + read_host + " " + read_core + " write: " + write_host + " " + write_core);
-
-
-              }
-
-              if (queued === 0) {
-                queue.activeCount(function (err, actives) {
-                  console.error("checkforshutdown [ activeCount: " + actives + "\terr: " + err + "]");
-                  if (actives === 0) {
-                    shutdown();
-                    clearInterval(checkforShutdown);
-                  }
-                });
-              }
-            });
-
-          }, CHECK_DELAY);
-
-          // setInterval(function () {
-          //   console.error("TIMEOUT");
-          //   shutdown();
-          //   clearInterval(checkforShutdown);
-          // }, TIMEOUT);
-
-        }]
-    );
-  }
+      }]
+  );
+},
+  // "big run": function (test) {
+  //   var queue = createAssetKue.createQueue();
+  //   var qlist = [
+  //     // "name:bumthang",
+  //     // "name:Chukha",
+  //     // "ancestor_uids_generic:(places-427 subjects-8260)",
+  //     // "uid:places-637",
+  //     // "name:lhasa",
+  //     "tree:subjects",
+  //     "tree:places",
+  //     "tree:terms"
+  //   ];
+  //   var length = qlist.length;
+  //   async.series(
+  //     [
+  //       function(done) {
+  //         console.error("rangeing to eliminate old jobs");
+  //         kue.Job.rangeByState( 'active', 0, 10, 'asc', function( err, jobs ) {
+  //           console.error("Removing " + jobs.length + " active jobs");
+  //           jobs.forEach( function( job ) {
+  //             console.log("job: " + job.id);
+  //             job.remove( function(){
+  //               // console.log( 'removed ', job.id );
+  //             });
+  //           });
+  //         });
+  //         kue.Job.rangeByState( 'inactive', 0, 3000, 'asc', function( err, jobs ) {
+  //           console.error("Removing " + jobs.length + " inactive jobs");
+  //           jobs.forEach( function( job ) {
+  //             job.remove( function(){
+  //               // console.log( 'removed ', job.id );
+  //             });
+  //           });
+  //         });
+  //         setTimeout(function() {
+  //           done();
+  //         },2000);
+  //       },
+  //       function (done) {
+  //
+  //         console.error("qlist: " + JSON.stringify(qlist));
+  //
+  //         async.map(qlist, function (q, next) {
+  //             console.error("### calling generateJobspecs with " + q + " " + JSON.stringify(arguments));
+  //             createAssetKue.generateJobspecs(config, q, function (err, subquerylist) {
+  //               console.error("mapping with " + subquerylist);
+  //
+  //               if (REVERSE) {
+  //                 subquerylist = _.reverse(subquerylist);
+  //               }
+  //
+  //               if (SHUFFLE) {
+  //                 subquerylist = _.shuffle(subquerylist);
+  //               }
+  //
+  //               async.map(subquerylist,
+  //
+  //                 function (query, next2) {
+  //                 console.error("### calling addJob with " + JSON.stringify(query));
+  //                 createAssetKue.addJob(queue, query, function (err, ret) {
+  //                   console.error("CALLBACK FOR " + JSON.stringify(query));
+  //                   if (err) {
+  //                     console.error("error object returned " + err);
+  //                     next2(err);
+  //                   }
+  //                   if (ret) {
+  //                     console.log("object returned");
+  //                     /* console.dir(ret); */
+  //                     next2(null, ret);
+  //                   }
+  //                 });
+  //               },
+  //                 function(err, ret) {
+  //                   console.error(err);
+  //                   console.error("ret: " + ret);
+  //                   next(err,ret);
+  //                 }
+  //               );
+  //             });
+  //           },
+  //
+  //           function (err, list) {
+  //             console.error("done with Queueing!")
+  //             if (err) console.error(err);
+  //             console.dir(list);
+  //             done();
+  //           });
+  //       },
+  //       function (done) {
+  //         // process the queue
+  //         console.error("processing the queue!");
+  //         createAssetKue.processQueue(config, queue, function (err, ret) {
+  //           console.log("processed: " + ret);
+  //           if (err) {
+  //             test.ok(false);
+  //           } else {
+  //             test.ok(true);
+  //             // NEED TO VERIFY THE RESULTS!!!!!!!
+  //           }
+  //         });
+  //         test.expect(length + 1);
+  //
+  //         var shutdown = function () {
+  //           queue.shutdown(function (err, ret) {
+  //             if (err) {
+  //               console.error("error: " + err);
+  //             }
+  //             if (ret) {
+  //               console.error("return: " + ret);
+  //             }
+  //             console.log('[ All jobs finished. Kue is shut down. ]');
+  //             test.done();
+  //           });
+  //         };
+  //
+  //         var checkCount = function() {
+  //           var count = 0;
+  //           var counter = function() {
+  //             count = count + 1;
+  //             return count;
+  //           }
+  //           return counter;
+  //         }();
+  //
+  //         var checkforShutdown = setInterval(function () {
+  //           queue.inactiveCount(function (err, queued) {
+  //             var checks = checkCount();
+  //             if (checks % 10 === 0) {
+  //               var read_host = config.read_client.options.host;
+  //               var read_core = config.read_client.options.core;
+  //               var write_host = config.write_client.options.host;
+  //               var write_core = config.write_client.options.core;
+  //               console.error("checkforshutdown " + new Date().toISOString() + " [ inactives: " + queued + "\terr: " + err + "]  checkcount: " + checks + "(read: " + read_host + " " + read_core + " write: " + write_host + " " + write_core);
+  //
+  //
+  //             }
+  //
+  //             if (queued === 0) {
+  //               queue.activeCount(function (err, actives) {
+  //                 console.error("checkforshutdown [ activeCount: " + actives + "\terr: " + err + "]");
+  //                 if (actives === 0) {
+  //                   shutdown();
+  //                   clearInterval(checkforShutdown);
+  //                 }
+  //               });
+  //             }
+  //           });
+  //
+  //         }, CHECK_DELAY);
+  //
+  //         // setInterval(function () {
+  //         //   console.error("TIMEOUT");
+  //         //   shutdown();
+  //         //   clearInterval(checkforShutdown);
+  //         // }, TIMEOUT);
+  //
+  //       }]
+  //   );
+  // }
 });
 
 // module.exports = testCase({
 //   "big run": function (test) {
-//     var queue = solrKue.createQueue();
+//     var queue = createAssetKue.createQueue();
 //     var queryList = [
 //       "uid: places-637",
 //       "uid: subjects-20",
@@ -326,7 +478,7 @@ module.exports = testCase({
 //
 //     // setup the job queue
 //     for (var i = 0; i < length; i++) {
-//       solrKue.addJob(queue, {query: queryList[i]}, function (err, ret) {
+//       createAssetKue.addJob(queue, {query: queryList[i]}, function (err, ret) {
 //         if (err) {
 //           console.log("error object returned");
 //           /* console.dir(err); */
@@ -339,7 +491,7 @@ module.exports = testCase({
 //     }
 //
 //     // process the queue
-//     solrKue.processQueue(config, queue, function (err, ret) {
+//     createAssetKue.processQueue(config, queue, function (err, ret) {
 //       console.log("processed: " + ret);
 //       if (err) {
 //         test.ok(false);
