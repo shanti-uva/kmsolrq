@@ -10,7 +10,7 @@ var localStorage
 const DEBUG = false;
 const DEFAULT_ROWS = 500;
 const DEFAULT_CONCURRENCY = 3;
-const FORCE_OVERWRITE = false;
+const FORCE_OVERWRITE = true;
 const SCHEMA_VERSION = 14;
 
 if (typeof localStorage === "undefined" || localStorage === null) {
@@ -229,14 +229,29 @@ var createAssetEntry = exports.createAssetEntry =
           } else if (kmapEntry['ancestor_uids_tib.alpha']) {
             kmapid = kmapEntry['ancestor_uids_tib.alpha'];
           }
-          console.log("USING kmapid = " + JSON.stringify(kmapid));
-
-          var kmapid_is= _.map(kmapid, generateId);
 
           //  The current "template for writing asset enries for kmaps".
           var stricts = [ kmapEntry.uid ];
           if (relateds) {
             stricts = _.concat(stricts,relateds);
+          }
+
+          kmapid = _.uniq(_.sortBy(_.concat(stricts,relateds,kmapid), function (x){ return x; } ));
+
+          var kmapid_is= _.map(kmapid, generateId);
+
+          console.log("USING kmapid = " + JSON.stringify(kmapid));
+
+          var ancestorsTxt = kmapEntry.ancestors;
+          var ancestorIdsIs = kmapEntry.ancestor_ids_generic;
+
+
+          if (kmapEntry['ancestors_tib.alpha']) {
+            ancestorsTxt = kmapEntry['ancestors_tib.alpha'];
+          }
+
+          if (kmapEntry['ancestor_ids_tib.alpha']) {
+            ancestorIdsIs = kmapEntry['ancestor_ids_tib.alpha'];
           }
 
           var doc = {
@@ -257,13 +272,23 @@ var createAssetEntry = exports.createAssetEntry =
             "name_latin": kmapEntry.name_latin,
             "title": header,
             "feature_types_ss": feature_types,
-            "ancestors_txt": kmapEntry.ancestors,
-            "ancestor_ids_is": kmapEntry.ancestor_ids_generic,
+            "associated_subjects_ss" : kmapEntry.associated_subjects,
+            "ancestors_txt": ancestorsTxt,
+            "ancestor_ids_is": ancestorIdsIs,
             // "ancestor_uids_generic": kmapEntry.ancestor_uids_generic,
             "related_ss": kmapList,
-            "related_uid_ss": relateds
+            "related_uid_ss": relateds,
+            "position_i": kmapEntry.position_i
           };
 
+          // map the associated data if available
+          if (kmapEntry.associated_subject_185_ss) doc["data_language_context_ss"] = kmapEntry.associated_subject_185_ss;
+          if (kmapEntry.associates_subject_286_ss) doc["data_tibetan_grammatical_function_ss"] = kmapEntry.associates_subject_286_ss;
+          if (kmapEntry.associated_subject_190_ss) doc["data_register_ss"] = kmapEntry.associated_subject_190_ss;
+          if (kmapEntry.associated_subject_187_ss) doc["data_literary_period_ss"] = kmapEntry.associated_subject_187_ss;
+          if (kmapEntry.associated_subject_5812_ss) doc["data_grammars_ss"] = kmapEntry.associated_subject_5812_ss;
+          if (kmapEntry.associated_subject_272_ss) doc["data_tibet_and_himalayas_ss"] = kmapEntry.associated_subject_272_ss;
+          if (kmapEntry.associated_subject_9310_ss) doc["data_phoneme_ss"] =  kmapEntry.associated_subject_9310_ss;
 
           // clean captions
           var caption = null;

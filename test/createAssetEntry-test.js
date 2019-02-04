@@ -17,7 +17,8 @@ const KMTERMS_DEV_UNAUTH = {
           service : "kmaps",
           baseurl : "https://mandala.shanti.virginia.edu"
       };
-      const kmapid = "terms-8862";
+      // const kmapid = "terms-8862";
+      const kmapid = "terms-115326";
 
       test.expect(2);
       solrKue.getKmapEntries(client, "uid:" + kmapid, 10, 0, function(err, resp) {
