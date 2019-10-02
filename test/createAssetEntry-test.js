@@ -1,3 +1,4 @@
+const DEBUG = false;
 var testCase = require('nodeunit').testCase;
 var solrKue = require('../logic/solrWriteKmapAssetKue.js');
 var solr = require('solr-client');
@@ -18,7 +19,9 @@ const KMTERMS_DEV_UNAUTH = {
           baseurl : "https://mandala.shanti.virginia.edu"
       };
       // const kmapid = "terms-8862";
-      const kmapid = "terms-115326";
+      const kmapid = "places-437";
+      // const kmapid = "terms-115326";
+
 
       test.expect(2);
       solrKue.getKmapEntries(client, "uid:" + kmapid, 10, 0, function(err, resp) {
@@ -28,7 +31,7 @@ const KMTERMS_DEV_UNAUTH = {
           } else {
             var kmapEntry = resp[0];
 
-            console.error(JSON.stringify(kmapEntry, undefined, 2));
+            if (DEBUG) console.error(JSON.stringify(kmapEntry, undefined, 2));
 
             solrKue.createAssetEntry(kmapEntry, config, function(err, assetEntry) {
               if (err) {

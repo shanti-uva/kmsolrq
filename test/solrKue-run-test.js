@@ -121,7 +121,7 @@ var config = {
         return true;
       }
     } else {
-      return true;
+      return false;
     }
 
   },
@@ -136,9 +136,9 @@ module.exports = testCase({
       // "name:Chukha",
       // "ancestor_uids_generic:(places-427 subjects-8260)",
       // "uid:places-637",
-      // "name:lhasa",
-      // "tree:subjects",
-      // "tree:places",
+      "name:lhasa",
+      "tree:subjects",
+      "tree:places",
       "tree:terms"
     ];
     var length = qlist.length;

@@ -1,3 +1,9 @@
+const DEBUG = false;
+const DEFAULT_ROWS = 500;
+const DEFAULT_CONCURRENCY = 3;
+const FORCE_OVERWRITE = false;
+const SCHEMA_VERSION = 14;
+
 var kue = require('kue');
 var check = require('type-check').typeCheck;
 var solr = require('solr-client');
@@ -5,13 +11,7 @@ var _ = require('lodash');
 var async = require('async');
 var xml2js = require('xml2js');
 var striptags = require('striptags');
-var localStorage
-
-const DEBUG = false;
-const DEFAULT_ROWS = 500;
-const DEFAULT_CONCURRENCY = 3;
-const FORCE_OVERWRITE = true;
-const SCHEMA_VERSION = 14;
+var localStorage;
 
 if (typeof localStorage === "undefined" || localStorage === null) {
   var LocalStorage = require('node-localstorage').LocalStorage;
@@ -75,7 +75,7 @@ var getKmapEntries = exports.getKmapEntries =
             var doc = resp.response.docs[i];
 
             if (!localStorage.getItem(doc.uid)) {
-              console.error("Caching: " + doc.uid + " = " + doc.header + "  kmapid:  " + JSON.stringify(doc.kmapid) );
+              console.log("Caching: " + doc.uid + " = " + doc.header + "  kmapid:  " + JSON.stringify(doc.kmapid) );
               localStorage.setItem(doc.uid, doc.header);
             }
           }
@@ -86,18 +86,77 @@ var getKmapEntries = exports.getKmapEntries =
   };
 
 
+var recordKmap = exports.recordKmap = function recordKmap(names, ids, domain) {
+
+  if (typeof names !== "object") {
+    console.log("names is " + JSON.stringify(names));
+    return;
+  }
+
+  if (typeof ids !== "object") {
+    console.log("ids is " + JSON.stringify(ids));
+    return;
+  }
+
+  if (names.length !== ids.length) {
+    console.log("lengths of the arrays do not match!");
+    return;
+  }
+
+
+  for (var i=0; i < names.length; i++) {
+    var name = names[i];
+    var id = ids[i];
+    var uid = domain + "-" + id;
+    var old = localStorage.getItem(uid);
+
+
+    if (DEBUG) {
+      console.log(">>> NAME: " + name);
+      console.log(">>> ID:" + id);
+      console.log(">>> UID: " + uid);
+    }
+
+    if (old) {
+      if (old !== name) {
+        console.log ("#######################################################");
+        var msg = "############## NAME MISMATCH: old=" + old + " new=" + name;
+        console.log(msg);
+        // throw new Error(msg);
+      }
+      // console.log("SKIPPING: " + uid + "=>" + name);
+    } else {
+      console.log("PUTTING: " + uid + "=>" + name);
+      localStorage.setItem(uid,name);
+    }
+
+  }
+}
+
+
+
+
 var lookupKmapIds = exports.getlookupKmapIds =
   function(kmapids) {
-      // console.error("lookupKmapIds sees args = " + JSON.stringify(arguments));
+      console.log("lookupKmapIds sees args = " + JSON.stringify(arguments));
       var kmapList = [];
-      for (var i; i < kmapids.length; i++) {
+
+
+      console.log("KMAPIDS: " + JSON.stringify(kmapids));
+
+      for (var i = 0; i < kmapids.length; i++) {
+
+
         var kid = kmapids[i];
         var name = localStorage.getItem(kid)
         if (name === null) {
           name = kid;
         }
-        kmapList.push(kid + ":" + name);
+        var entry = name + "|" + kid;
+        kmapList.push(entry);
       }
+
+      console.log("lookupKmapIds returning " + JSON.stringify(kmapList));
       return kmapList;
   };
 
@@ -163,6 +222,11 @@ var createAssetEntry = exports.createAssetEntry =
           var header = kmapEntry.header;
           var feature_types = kmapEntry.feature_types;
 
+
+          console.dir(kmapEntry);
+
+          // throw new Error("stop");
+
           function processNames(rentries) {
             // filter by name_* fields
             var name_entries1 = _.filter(rentries, function (x) {
@@ -224,6 +288,9 @@ var createAssetEntry = exports.createAssetEntry =
 
           var uid_i = generateId(type + "-" + id);
           var kmapid = [];
+          var kxlist_subjects = [];
+          var kxlist_places = [];
+          var kxlist_terms = [];
           if (kmapEntry.ancestor_uids_generic) {
             kmapid = kmapEntry.ancestor_uids_generic;
           } else if (kmapEntry['ancestor_uids_tib.alpha']) {
@@ -236,22 +303,64 @@ var createAssetEntry = exports.createAssetEntry =
             stricts = _.concat(stricts,relateds);
           }
 
-          kmapid = _.uniq(_.sortBy(_.concat(stricts,relateds,kmapid), function (x){ return x; } ));
-
-          var kmapid_is= _.map(kmapid, generateId);
-
-          console.log("USING kmapid = " + JSON.stringify(kmapid));
-
           var ancestorsTxt = kmapEntry.ancestors;
           var ancestorIdsIs = kmapEntry.ancestor_ids_generic;
 
-
+          //
           if (kmapEntry['ancestors_tib.alpha']) {
             ancestorsTxt = kmapEntry['ancestors_tib.alpha'];
           }
 
+
+          //
           if (kmapEntry['ancestor_ids_tib.alpha']) {
             ancestorIdsIs = kmapEntry['ancestor_ids_tib.alpha'];
+          }
+
+          if (kmapEntry.ancestors) {
+
+            console.log("ANCESTORS_TXT = " + JSON.stringify(kmapEntry.ancestors));
+            console.log("ANCESTOR_IDS = " + JSON.stringify(kmapEntry.ancestor_ids_generic));
+
+            if (kmapEntry.ancestors.length !== kmapEntry.ancestor_ids_generic.length) {
+              throw new Error("Counts don't match!")
+            }
+
+            var domain = kmapEntry.tree;
+            var uidlist = _.map(ancestorIdsIs, function (x) {
+              return domain + "-" + x
+            });
+
+            console.log("UIDLIST = " + uidlist);
+            recordKmap(kmapEntry.ancestors, uidlist, domain);
+
+            kmapid = _.uniq(_.sortBy(_.concat(stricts, relateds, kmapid, uidlist), function (x) {
+              return x;
+            }));
+
+            var kmapid_is = _.map(kmapid, generateId);
+
+            console.log("USING kmapid = " + JSON.stringify(kmapid));
+
+            var looky = lookupKmapIds(kmapid);
+            console.log("LOOKY = " + looky);
+
+            _.each(looky, function (x) {
+              if (DEBUG) console.log("EACHING: " + x);
+              if (x.indexOf("|places") !== -1) {
+                kxlist_places.push(x);
+              } else if (x.indexOf("|subjects") !== -1) {
+                kxlist_subjects.push(x);
+              } else if (x.indexOf("|terms") != -1) {
+                kxlist_terms.push(x);
+              }
+            });
+
+            if (DEBUG) {
+              console.log(" places = " + kxlist_places);
+              console.log(" subjects = " + kxlist_subjects);
+              console.log(" terms = " + kxlist_terms);
+            }
           }
 
           var doc = {
@@ -276,7 +385,9 @@ var createAssetEntry = exports.createAssetEntry =
             "ancestors_txt": ancestorsTxt,
             "ancestor_ids_is": ancestorIdsIs,
             // "ancestor_uids_generic": kmapEntry.ancestor_uids_generic,
-            "related_ss": kmapList,
+            "kmapid_subjects_idfacet": kxlist_subjects,
+            "kmapid_places_idfacet": kxlist_places,
+            "kmapid_terms_idfacet": kxlist_terms,
             "related_uid_ss": relateds,
             "position_i": kmapEntry.position_i
           };
