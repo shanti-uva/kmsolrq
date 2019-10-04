@@ -2,7 +2,7 @@ const DEBUG = false;
 const DEFAULT_ROWS = 500;
 const DEFAULT_CONCURRENCY = 3;
 const FORCE_OVERWRITE = false;
-const SCHEMA_VERSION = 14;
+const SCHEMA_VERSION = 18;
 
 var kue = require('kue');
 var check = require('type-check').typeCheck;
@@ -120,9 +120,12 @@ var recordKmap = exports.recordKmap = function recordKmap(names, ids, domain) {
     if (old) {
       if (old !== name) {
         console.log ("#######################################################");
-        var msg = "############## NAME MISMATCH: old=" + old + " new=" + name;
+        var msg = "############## NAME MISMATCH: uid = " + uid + " old=" + old + " new=" + name;
         console.log(msg);
-        // throw new Error(msg);
+        console.log(">>> NAME: " + name);
+        console.log(">>> ID:" + id);
+        console.log(">>> UID: " + uid);
+        throw new Error(msg);
       }
       // console.log("SKIPPING: " + uid + "=>" + name);
     } else {
@@ -220,10 +223,37 @@ var createAssetEntry = exports.createAssetEntry =
 
           var kmapProps = Object.entries(kmapEntry);
           var header = kmapEntry.header;
+
+          var domain = kmapEntry.tree;
+
           var feature_types = kmapEntry.feature_types;
+          var feature_type_ids = kmapEntry.feature_type_ids;
+          var ftlist_subjects = [];
+
+          if (domain === "places"  && feature_types && feature_type_ids ) {
+
+            // console.log("FFFF: " + JSON.stringify(feature_types));
+            // console.log("IIII: " + JSON.stringify(feature_type_ids));
 
 
-          console.dir(kmapEntry);
+            // throw "Yulk";
+
+
+
+            recordKmap(feature_types, feature_type_ids, "subjects");
+
+
+            for (var i = 0 ; i < feature_type_ids.length; i++) {
+
+              console.log("feature_type_ids = " + feature_type_ids);
+              console.log(" f = " + feature_type_ids[i]);
+              var f = lookupKmapIds([ "subjects-" + feature_type_ids[i] ]);
+              console.log("     FFFFEAT: " + JSON.stringify(f));
+              ftlist_subjects.push(f[0]);
+            }
+          }
+
+          console.log(JSON.stringify(kmapEntry,undefined, 2));
 
           // throw new Error("stop");
 
@@ -323,10 +353,11 @@ var createAssetEntry = exports.createAssetEntry =
             console.log("ANCESTOR_IDS = " + JSON.stringify(kmapEntry.ancestor_ids_generic));
 
             if (kmapEntry.ancestors.length !== kmapEntry.ancestor_ids_generic.length) {
-              throw new Error("Counts don't match!")
+              console.error("Counts don't match!  uid = " + uid);
+              next("count mistmatch uid = " + uid, null);
+              return
             }
 
-            var domain = kmapEntry.tree;
             var uidlist = _.map(ancestorIdsIs, function (x) {
               return domain + "-" + x
             });
@@ -388,6 +419,7 @@ var createAssetEntry = exports.createAssetEntry =
             "kmapid_subjects_idfacet": kxlist_subjects,
             "kmapid_places_idfacet": kxlist_places,
             "kmapid_terms_idfacet": kxlist_terms,
+            "feature_types_idfacet": ftlist_subjects,
             "related_uid_ss": relateds,
             "position_i": kmapEntry.position_i
           };
@@ -444,12 +476,16 @@ var createAssetEntry = exports.createAssetEntry =
         }
       ],
       function (err, doc) {
-        if(doc.caption) {
+        if(doc && doc.caption) {
           if(DEBUG) console.log("GOT: " + doc.uid + " " + doc.title);
           // console.dir(doc);
         }
+
+        if (err) {
+          console.error("ERROR reported:  " + err);
+        }
         async.nextTick(function () {
-          callback(null, doc)
+          callback(err, doc)
         });
       }
     )
@@ -488,7 +524,7 @@ var writeAssetDoc = exports.writeAssetDoc =
           console.error("RETRY ON ERROR: " + err.code);
           console.error(err);
           if (err.code !== "ENOTFOUND") {
-            console.error("Unknown error: " + JSON.stringify(err, undefined, 2));
+            console.error("Unknown error: " + JSON.stringify(err));
           }
           return true;
         }
@@ -510,7 +546,7 @@ var writeAssetDoc = exports.writeAssetDoc =
         errorFilter: function (err) {
           console.error("check RETRY ON ERROR: " + err.code);
           if (err.code !== "ENOTFOUND") {
-            console.error("Unknown error: " + JSON.stringify(err, undefined, 2));
+            console.error("Unknown error: " + JSON.stringify(err));
           }
           return true;
         }

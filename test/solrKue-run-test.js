@@ -137,9 +137,9 @@ module.exports = testCase({
       // "ancestor_uids_generic:(places-427 subjects-8260)",
       // "uid:places-637",
       "name:lhasa",
-      "tree:subjects",
       "tree:places",
-      "tree:terms"
+      // "tree:subjects",
+      // "tree:terms"
     ];
     var length = qlist.length;
     async.series(
