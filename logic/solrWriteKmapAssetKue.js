@@ -19,7 +19,7 @@ if (typeof localStorage === "undefined" || localStorage === null) {
 }
 
 var createQueue = exports.createQueue = function () {
-  var queue = kue.createQueue();
+  var queue = kue.createQueue( { redis: { auth: '1HrAghEQAIZ9k7VbUgmY'} });
   queue.on("job enqueue", function () {
     console.log("job queued " + JSON.stringify(arguments));
   }).on("job complete", function () {
@@ -107,9 +107,20 @@ var recordKmap = exports.recordKmap = function recordKmap(names, ids, domain) {
   for (var i=0; i < names.length; i++) {
     var name = names[i];
     var id = ids[i];
-    var uid = domain + "-" + id;
-    var old = localStorage.getItem(uid);
+    var uid = "";
 
+    if (typeof id === "number") {
+      uid = domain + "-" + id;
+    } else {
+      uid = id;
+      var checktype = id.match( /(\w+)\-\d+/);
+      if (!checktype || !checktype.length || checktype[1] !== domain) {
+        throw new Error("CHECKTYPE: domain " + domain + " does not match id " + id + " with checktype = " + checktype[1]);
+      }
+    }
+
+    // console.log("### id = " + id + " type: " + typeof id);
+     var old = localStorage.getItem(uid);
 
     if (DEBUG) {
       console.log(">>> NAME: " + name);
@@ -120,13 +131,20 @@ var recordKmap = exports.recordKmap = function recordKmap(names, ids, domain) {
     if (old) {
       if (old !== name) {
         console.log ("#######################################################");
-        var msg = "############## NAME MISMATCH: uid = " + uid + " old=" + old + " new=" + name;
+        var msg = "############## NAME MISMATCH: uid = " + uid + "\n\told=" + old + "\n\tnew=" + name;
         console.log(msg);
-        console.log(">>> NAME: " + name);
-        console.log(">>> ID:" + id);
-        console.log(">>> UID: " + uid);
-        throw new Error(msg);
+        // console.log(">>> NAME: " + name);
+        // console.log(">>> ID:" + id);
+        // console.log(">>> UID: " + uid);
+        // throw new Error(msg);
       }
+
+      if (true) {
+
+        // Let's overwrite!  The name changed!
+        localStorage.setItem(uid, name);
+      }
+
       // console.log("SKIPPING: " + uid + "=>" + name);
     } else {
       console.log("PUTTING: " + uid + "=>" + name);
@@ -136,16 +154,13 @@ var recordKmap = exports.recordKmap = function recordKmap(names, ids, domain) {
   }
 }
 
-
-
-
 var lookupKmapIds = exports.getlookupKmapIds =
   function(kmapids) {
-      console.log("lookupKmapIds sees args = " + JSON.stringify(arguments));
+      // console.log("lookupKmapIds sees args = " + JSON.stringify(arguments));
       var kmapList = [];
 
 
-      console.log("KMAPIDS: " + JSON.stringify(kmapids));
+      // console.log("KMAPIDS: " + JSON.stringify(kmapids));
 
       for (var i = 0; i < kmapids.length; i++) {
 
@@ -159,7 +174,7 @@ var lookupKmapIds = exports.getlookupKmapIds =
         kmapList.push(entry);
       }
 
-      console.log("lookupKmapIds returning " + JSON.stringify(kmapList));
+      // console.log("lookupKmapIds returning " + JSON.stringify(kmapList));
       return kmapList;
   };
 
@@ -253,7 +268,7 @@ var createAssetEntry = exports.createAssetEntry =
             }
           }
 
-          console.log(JSON.stringify(kmapEntry,undefined, 2));
+          // console.log(JSON.stringify(kmapEntry,undefined, 2));
 
           // throw new Error("stop");
 
@@ -349,20 +364,21 @@ var createAssetEntry = exports.createAssetEntry =
 
           if (kmapEntry.ancestors) {
 
-            console.log("ANCESTORS_TXT = " + JSON.stringify(kmapEntry.ancestors));
-            console.log("ANCESTOR_IDS = " + JSON.stringify(kmapEntry.ancestor_ids_generic));
-
+            if (DEBUG) {
+              console.log("ANCESTORS_TXT = " + JSON.stringify(kmapEntry.ancestors));
+              console.log("ANCESTOR_IDS = " + JSON.stringify(kmapEntry.ancestor_ids_generic));
+            }
             if (kmapEntry.ancestors.length !== kmapEntry.ancestor_ids_generic.length) {
               console.error("Counts don't match!  uid = " + uid);
-              next("count mistmatch uid = " + uid, null);
-              return
+              next("count mistmatch uid = " + uid, doc);
+              return;
             }
 
             var uidlist = _.map(ancestorIdsIs, function (x) {
               return domain + "-" + x
             });
 
-            console.log("UIDLIST = " + uidlist);
+            if (DEBUG) console.log("UIDLIST = " + uidlist);
             recordKmap(kmapEntry.ancestors, uidlist, domain);
 
             kmapid = _.uniq(_.sortBy(_.concat(stricts, relateds, kmapid, uidlist), function (x) {
@@ -371,10 +387,10 @@ var createAssetEntry = exports.createAssetEntry =
 
             var kmapid_is = _.map(kmapid, generateId);
 
-            console.log("USING kmapid = " + JSON.stringify(kmapid));
+            // console.log("USING kmapid = " + JSON.stringify(kmapid));
 
             var looky = lookupKmapIds(kmapid);
-            console.log("LOOKY = " + looky);
+            // console.log("LOOKY = " + looky);
 
             _.each(looky, function (x) {
               if (DEBUG) console.log("EACHING: " + x);
@@ -485,6 +501,14 @@ var createAssetEntry = exports.createAssetEntry =
           console.error("ERROR reported:  " + err);
         }
         async.nextTick(function () {
+
+
+          if (err) {
+            console.error("ERROR on nextTick():  Returning blank document!\n\t" + " doc = " + doc);
+
+            err = null; doc = {};
+          }
+
           callback(err, doc)
         });
       }
@@ -495,6 +519,12 @@ var createAssetEntry = exports.createAssetEntry =
 
 var writeAssetDoc = exports.writeAssetDoc =
   function (config, new_doc, callback) {
+
+    if (!new_doc) {
+      throw new Error("NO DOC!");
+    }
+
+
     var write_client = config.write_client;
     // console.error("WRITING ASSET CLIENT: " + write_client);
     // console.error("WRITING ASSET CONFIG: " + JSON.stringify(config, undefined, 2));
@@ -502,8 +532,12 @@ var writeAssetDoc = exports.writeAssetDoc =
       if (FORCE_OVERWRITE) {
         return true;
       }
-      // console.log ("newdoc schema version: " + newdoc.schema_version_i);
-      // console.log ("olddoc schema version: " + olddoc.schema_version_i);
+
+      if (!newdoc || Object.keys(newdoc).length === 0) {
+        console.error("NEW DOC is empty...  Skipping...");
+        return false };
+      if (!olddoc || Object.keys(newdoc).length === 0) { return true };
+
       return (newdoc.schema_version_i > olddoc.schema_version_i);
     };
 
@@ -522,6 +556,7 @@ var writeAssetDoc = exports.writeAssetDoc =
         },
         errorFilter: function (err) {
           console.error("RETRY ON ERROR: " + err.code);
+          console.error(err);
           console.error(err);
           if (err.code !== "ENOTFOUND") {
             console.error("Unknown error: " + JSON.stringify(err));
@@ -576,7 +611,7 @@ var writeAssetDoc = exports.writeAssetDoc =
 
       // console.log( "OVERWRITE "  + new_doc.uid + ": " + overwrite(new_doc, old_doc));
 
-      if (!existing.response.numFound || overwrite(new_doc, existing.response.docs[0])) {
+      if ( Object.keys(new_doc).length !== 0 && !existing.response.numFound || overwrite(new_doc, existing.response.docs[0])) {
         var core = write_client.options.core;
         console.error("WRITING ASSET DOC: [" + core + "] " + new_doc.uid + ": " + JSON.stringify(new_doc.title));
 
