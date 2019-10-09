@@ -273,6 +273,12 @@ var processQueue = exports.processQueue =
             )
           },
           function (output, next) {
+
+
+
+          // FIGURE OUT CALLBACK CHAIN HERE!!!!!!
+
+
             // console.dir(output);
             // console.dir(next);
             // console.error("HERE");
@@ -291,6 +297,10 @@ var processQueue = exports.processQueue =
           }
         ],
         function (err, result) {
+
+          console.dir("THIS IS THE END");
+          console.dir(result);
+
           if (err) {
             throw err;
             jobdone();

@@ -146,7 +146,7 @@ module.exports = testCase({
     async.series(
       [
         function(done) {
-          console.error("rangeing to eliminate old jobs");
+          console.error("ranging to eliminate old jobs");
           kue.Job.rangeByState( 'active', 0, 10, 'asc', function( err, jobs ) {
             console.error("Removing " + jobs.length + " active jobs");
             jobs.forEach( function( job ) {
@@ -222,7 +222,7 @@ module.exports = testCase({
         // process the queue
         console.error("processing the queue!");
         createAssetKue.processQueue(config, queue, function (err, ret) {
-          console.log("processed: " + ret);
+          console.log("processQueue processed: " + ret);
           if (err) {
             test.ok(false);
           } else {
@@ -235,10 +235,10 @@ module.exports = testCase({
         var shutdown = function () {
           queue.shutdown(function (err, ret) {
             if (err) {
-              console.error("error: " + err);
+              console.error("queue shutdown error: " + err);
             }
             if (ret) {
-              console.error("return: " + ret);
+              console.error("queue shutdown return: " + ret);
             }
             console.log('[ All jobs finished. Kue is shut down. ]');
             test.done();

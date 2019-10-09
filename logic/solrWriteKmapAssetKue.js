@@ -21,7 +21,9 @@ if (typeof localStorage === "undefined" || localStorage === null) {
 var createQueue = exports.createQueue = function () {
   var queue = kue.createQueue( { redis: { auth: '1HrAghEQAIZ9k7VbUgmY'} });
   queue.on("job enqueue", function () {
-    console.log("job queued " + JSON.stringify(arguments));
+    if (DEBUG) {
+      console.log("job queued " + JSON.stringify(arguments));
+    }
   }).on("job complete", function () {
     console.log("job done " + JSON.stringify(arguments));
   }).on('progress', function (progress, data) {
@@ -54,7 +56,7 @@ var getKmapEntries = exports.getKmapEntries =
       query: query,
       rows: rows,
       start: start
-    }, undefined, 2));
+    }));
     var q = read_client.createQuery().q(query).matchFilter("block_type", "parent").rows(rows).start(start);
 
     async.setImmediate(function () {
@@ -63,12 +65,15 @@ var getKmapEntries = exports.getKmapEntries =
           console.error("ERROR reading: " + err);
         }
 
-        console.log("####### Response received");
-        console.log("numFound = " + resp.response.numFound);
-        console.log("start = " + resp.response.start);
+        if (DEBUG) {
+          console.log("####### Response received");
+          console.log("numFound = " + resp.response.numFound);
+          console.log("start = " + resp.response.start);
+        }
 
         async.setImmediate(function () {
-          if (!err) console.log("calling back: " + resp.response.docs.length + " docs");
+          if (DEBUG && !err) console.log("calling back: " + resp.response.docs.length + " docs");
+          if (err) console.error("error: " + err);
 
           // Let's cache a map of the uid's and headers
           for (var i=0 ; i < resp.response.docs.length; i++){
@@ -260,10 +265,12 @@ var createAssetEntry = exports.createAssetEntry =
 
             for (var i = 0 ; i < feature_type_ids.length; i++) {
 
-              console.log("feature_type_ids = " + feature_type_ids);
-              console.log(" f = " + feature_type_ids[i]);
+              if (DEBUG) {
+                console.log("feature_type_ids = " + feature_type_ids);
+                console.log(" f = " + feature_type_ids[i]);
+              }
               var f = lookupKmapIds([ "subjects-" + feature_type_ids[i] ]);
-              console.log("     FFFFEAT: " + JSON.stringify(f));
+              if (DEBUG) console.log("     FFFFEAT: " + JSON.stringify(f));
               ftlist_subjects.push(f[0]);
             }
           }
@@ -639,14 +646,10 @@ var processQueue = exports.processQueue =
 
     var read_client = config.read_client;
     var write_client = config.write_client;
-
-    // console.error("read_client = " + read_client);
-    // console.error("write_client = " + JSON.stringify(write_client));
-
-    // JOB DATA:   { "query": "uid:places-12345" }
     const concurrency = config.concurrency || DEFAULT_CONCURRENCY;
+
     queue.process('process', concurrency, function (job, jobdone) {
-      console.error("PROCESSING job: " + JSON.stringify(job));
+      console.error("PROCESSING job: " + job.data.title);
 
       function getCounter() {
         var count = 0;
@@ -663,8 +666,14 @@ var processQueue = exports.processQueue =
           },
           setCount: function (count) {
             full_count = count;
+          },
+          title: function () {
+            return job.data.title;
+          },
+          remainingCallback: function(cb) {
+            queue.inactiveCount(cb);
           }
-        }
+        };
         return counter;
       }
 
@@ -694,7 +703,9 @@ var processQueue = exports.processQueue =
                 var n = output.length;
                 var p = Math.ceil(n / 4);
                 if (i === 0 || i === p || i === p * 2 || i === p * 3 || i === n) {
-                  console.error(" count: " + counter.count() + " / " + counter.number());
+                  counter.remainingCallback(function(err,remain) {
+                    console.log("[ " + counter.title() + " ] count: " + counter.count() + " / " + counter.number() + " ( currently: " + doc.uid + " ) queued: " + remain);
+                  });
                 }
                 job.progress(counter.count(), counter.number());
                 writeAssetDoc(config, doc, each_cb);
@@ -703,13 +714,16 @@ var processQueue = exports.processQueue =
           }
         ],
         function (err, result) {
+
+          console.error("WATERFALL end");
+          console.dir(result);
+
+
           if (err) {
-            throw err;
             jobdone();
             processQueueCallback("fail", null);
+            throw err;
           } else {
-            // console.dir("IN THE RESULT CALLBACK")
-            // console.dir(result);
             jobdone();
             processQueueCallback(null, "success");
           }
