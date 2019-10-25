@@ -531,10 +531,8 @@ var writeAssetDoc = exports.writeAssetDoc =
       throw new Error("NO DOC!");
     }
 
-
     var write_client = config.write_client;
-    // console.error("WRITING ASSET CLIENT: " + write_client);
-    // console.error("WRITING ASSET CONFIG: " + JSON.stringify(config, undefined, 2));
+
     var overwrite = function (newdoc, olddoc) {
       if (FORCE_OVERWRITE) {
         return true;
@@ -550,20 +548,16 @@ var writeAssetDoc = exports.writeAssetDoc =
 
     var query = write_client.createQuery().df("uid").q(new_doc.uid).rows(1).start(0);
 
-    //  TODO: refactor to use waterfall and retry BOTH queries...
-
+    // wrap the "add" request in a retryable
     var add_retry = async.retryable(
       {
         times: 5,
         interval: function (attempts) {
-          console.error("RETRY: " + attempts);
           var pause =  50 * Math.pow(2, attempts);
-          console.log ("retry waiting " + pause);
           return pause;
         },
         errorFilter: function (err) {
           console.error("RETRY ON ERROR: " + err.code);
-          console.error(err);
           console.error(err);
           if (err.code !== "ENOTFOUND") {
             console.error("Unknown error: " + JSON.stringify(err));
@@ -574,10 +568,10 @@ var writeAssetDoc = exports.writeAssetDoc =
       function (doc, cb) {
         write_client.add(doc, cb);
       }
-    )
+    );
 
-    var check_retry = async.retryable(
-      {
+    // wrap the "check" query in a retryable
+    var check_retry = async.retryable({
         times: 5,
         interval: function (attempts) {
           console.error("check RETRY: " + attempts);
@@ -595,29 +589,19 @@ var writeAssetDoc = exports.writeAssetDoc =
       },
       function (query, cb) {
         write_client.get("select", query, function(doc,err) {
-          // if (err) {
-          //   console.error(err);
-          // }
-          // if (doc) {
-          //   console.dir(doc);
-          // }
           cb(doc,err);
         });
       }
     )
 
+    // EXAMINE THIS ONE CAREFULLY
 
+    // excecute the nested retryables
     check_retry(query, function (err, existing) {
       if (err) {
         console.error("error while trying to check entry: " + new_doc.uid + ": \n" + err);
         // console.dir(this);
-      } else {
-        // console.log("WRITE_CLIENT: get existing....");
-        // console.dir(obj);
       }
-
-      // console.log( "OVERWRITE "  + new_doc.uid + ": " + overwrite(new_doc, old_doc));
-
       if ( Object.keys(new_doc).length !== 0 && !existing.response.numFound || overwrite(new_doc, existing.response.docs[0])) {
         var core = write_client.options.core;
         console.error("WRITING ASSET DOC: [" + core + "] " + new_doc.uid + ": " + JSON.stringify(new_doc.title));
