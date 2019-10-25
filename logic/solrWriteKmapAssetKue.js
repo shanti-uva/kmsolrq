@@ -80,7 +80,7 @@ var getKmapEntries = exports.getKmapEntries =
             var doc = resp.response.docs[i];
 
             if (!localStorage.getItem(doc.uid)) {
-              console.log("Caching: " + doc.uid + " = " + doc.header + "  kmapid:  " + JSON.stringify(doc.kmapid) );
+              console.log("Caching: " + doc.uid + " = " + doc.header );
               localStorage.setItem(doc.uid, doc.header);
             }
           }
@@ -525,7 +525,7 @@ var createAssetEntry = exports.createAssetEntry =
   }
 
 var writeAssetDoc = exports.writeAssetDoc =
-  function (config, new_doc, callback) {
+  function (config, new_doc, callback, counter) {
 
     if (!new_doc) {
       throw new Error("NO DOC!");
@@ -604,7 +604,7 @@ var writeAssetDoc = exports.writeAssetDoc =
       }
       if ( Object.keys(new_doc).length !== 0 && !existing.response.numFound || overwrite(new_doc, existing.response.docs[0])) {
         var core = write_client.options.core;
-        console.error("WRITING ASSET DOC: [" + core + "] " + new_doc.uid + ": " + JSON.stringify(new_doc.title));
+        console.error(new Date().toLocaleTimeString() + " WRITING ASSET DOC: [" + core + "] " + counter.count() + "/" + counter.number()  + " queued: " + counter.remain() + " " + new_doc.uid + ": " + JSON.stringify(new_doc.title));
 
         add_retry(new_doc, function (err, obj) {
           if (err) {
@@ -638,6 +638,7 @@ var processQueue = exports.processQueue =
       function getCounter() {
         var count = 0;
         var full_count = 0;
+        var remain = 0;
         var counter = {
           done: function () {
             count++;
@@ -655,7 +656,17 @@ var processQueue = exports.processQueue =
             return job.data.title;
           },
           remainingCallback: function(cb) {
-            queue.inactiveCount(cb);
+            queue.inactiveCount(function(err,count) {
+              if (err) {
+                console.error("error getting inacctive count!")
+              } else {
+                remain = count;
+              }
+              cb(err,count);
+            });
+          },
+          remain: function () {
+            return remain;
           }
         };
         return counter;
@@ -688,11 +699,11 @@ var processQueue = exports.processQueue =
                 var p = Math.ceil(n / 4);
                 if (i === 0 || i === p || i === p * 2 || i === p * 3 || i === n) {
                   counter.remainingCallback(function(err,remain) {
-                    console.log("[ " + counter.title() + " ] count: " + counter.count() + " / " + counter.number() + " ( currently: " + doc.uid + " ) queued: " + remain);
+                    console.log(new Date().toLocaleTimeString() + " [ " + counter.title() + " ] count: " + counter.count() + " / " + counter.number() + " ( currently: " + doc.uid + " ) queued: " + remain);
                   });
                 }
                 job.progress(counter.count(), counter.number());
-                writeAssetDoc(config, doc, each_cb);
+                writeAssetDoc(config, doc, each_cb, counter);
               }, next
             );
           }
@@ -700,8 +711,7 @@ var processQueue = exports.processQueue =
         function (err, result) {
 
           console.error("WATERFALL end");
-          console.dir(result);
-
+          // console.dir(result);
 
           if (err) {
             jobdone();
