@@ -227,11 +227,6 @@ var processQueue = exports.processQueue =
 
     var read_client = config.read_client;
     var asset_client = config.write_client;
-
-    // console.error("read_client = " + read_client);
-    // console.error("asset_client = " + JSON.stringify(asset_client));
-
-    // JOB DATA:   { "query": "uid:places-12345" }
     const concurrency = config.concurrency || DEFAULT_CONCURRENCY;
     queue.process('process', concurrency, function (job, jobdone) {
       console.error("PROCESSING job: " + JSON.stringify(job));
@@ -273,16 +268,6 @@ var processQueue = exports.processQueue =
             )
           },
           function (output, next) {
-
-
-
-          // FIGURE OUT CALLBACK CHAIN HERE!!!!!!
-
-
-            // console.dir(output);
-            // console.dir(next);
-            // console.error("HERE");
-            // console.dir(writeAssetDoc);
             async.eachOfLimit(output, 1, function (doc, i, each_cb) {
                 counter.done(i);
                 var n = output.length;
@@ -306,8 +291,6 @@ var processQueue = exports.processQueue =
             jobdone();
             processQueueCallback("fail", null);
           } else {
-            // console.dir("IN THE RESULT CALLBACK")
-            // console.dir(result);
             jobdone();
             processQueueCallback(null, "success");
           }
