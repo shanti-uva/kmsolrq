@@ -410,7 +410,7 @@ var createAssetEntry = exports.createAssetEntry =
               }
             });
 
-            if (DEBUG) {
+            if (true) {
               console.log(" places = " + kxlist_places);
               console.log(" subjects = " + kxlist_subjects);
               console.log(" terms = " + kxlist_terms);
@@ -557,8 +557,14 @@ var writeAssetDoc = exports.writeAssetDoc =
           return pause;
         },
         errorFilter: function (err) {
-          console.error("RETRY ON ERROR: " + err.code);
-          console.error(err);
+          console.error("RETRY ON ERROR: " + err.code + " " + err.message);
+          // console.error(err);
+          //           //
+          //           // console.dir(err);
+          //           // console.dir(config);
+
+
+
           if (err.code !== "ENOTFOUND") {
             console.error("Unknown error: " + JSON.stringify(err));
           }
