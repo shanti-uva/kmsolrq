@@ -18,8 +18,8 @@ const KMTERMS_DEV_UNAUTH = {
           service : "kmaps",
           baseurl : "https://mandala.shanti.virginia.edu"
       };
-      // const kmapid = "terms-8862";
-      const kmapid = "places-437";
+      const kmapid = "terms-8862";
+      // const kmapid = "places-437";
       // const kmapid = "terms-115326";
 
 
