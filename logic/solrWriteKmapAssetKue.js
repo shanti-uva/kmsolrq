@@ -1,7 +1,7 @@
 const DEBUG = false;
 const DEFAULT_ROWS = 500;
 const DEFAULT_CONCURRENCY = 3;
-const FORCE_OVERWRITE = false;
+const FORCE_OVERWRITE = true;
 const SCHEMA_VERSION = 18;
 
 var kue = require('kue');
