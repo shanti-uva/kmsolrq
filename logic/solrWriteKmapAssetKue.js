@@ -2,7 +2,7 @@ const DEBUG = false;
 const DEFAULT_ROWS = 500;
 const DEFAULT_CONCURRENCY = 3;
 const FORCE_OVERWRITE = false;
-const SCHEMA_VERSION = 18;
+const SCHEMA_VERSION = 19;
 
 var kue = require('kue');
 var check = require('type-check').typeCheck;
@@ -220,7 +220,7 @@ var createAssetEntry = exports.createAssetEntry =
         var stripped = striptags(entries[i]);
         stripped = stripped.replace('&nbsp;', '');
         if (stripped) {
-          // console.log("original:" + entries[i]);
+          // console.log("original: " + entries[i]);
           // console.log("cleaned: " + stripped);
           cleaned.push(stripped);
         }
@@ -369,6 +369,16 @@ var createAssetEntry = exports.createAssetEntry =
             ancestorIdsIs = kmapEntry['ancestor_ids_tib.alpha'];
           }
 
+          // console.dir(kmapEntry);
+
+          if (kmapEntry['ancestors_tib.alpha'] && !kmapEntry.ancestors ) {
+            kmapEntry.ancestors = kmapEntry['ancestors_tib.alpha'];
+          }
+
+          if (kmapEntry['ancestor_ids_tib.alpha'] && !kmapEntry.ancestor_ids_generic) {
+            kmapEntry.ancestor_ids_generic = kmapEntry['ancestor_ids_tib.alpha'];
+          }
+
           if (kmapEntry.ancestors) {
 
             if (DEBUG) {
@@ -410,7 +420,7 @@ var createAssetEntry = exports.createAssetEntry =
               }
             });
 
-            if (true) {
+            if (DEBUG) {
               console.log(" places = " + kxlist_places);
               console.log(" subjects = " + kxlist_subjects);
               console.log(" terms = " + kxlist_terms);
@@ -475,6 +485,8 @@ var createAssetEntry = exports.createAssetEntry =
             doc.text = newtext;
           }
 
+          
+          console.log ("Ret: " + doc.uid);
           next(null, doc);
         },
         function (doc, next) {
