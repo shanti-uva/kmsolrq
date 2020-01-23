@@ -1,13 +1,8 @@
 const DEBUG = false;
 const DEFAULT_ROWS = 50;
 const DEFAULT_CONCURRENCY = 3;
-<<<<<<< HEAD
-const FORCE_OVERWRITE = true;
-const SCHEMA_VERSION = 19;
-=======
 const FORCE_OVERWRITE = false;
 const SCHEMA_VERSION = 20;
->>>>>>> b57b2276d7f25ec425da66e0228aae6cd575a7cb
 
 var kue = require('kue');
 var check = require('type-check').typeCheck;
