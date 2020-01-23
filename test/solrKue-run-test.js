@@ -130,17 +130,18 @@ var config = {
 
 module.exports = testCase({
   "big run": function (test) {
+    console.log("big run started");
     var queue = createAssetKue.createQueue();
     var qlist = [
       // "name:bumthang",
       // "name:Chukha",
       // "ancestor_uids_generic:(places-427 subjects-8260)",
-      // "uid:places-637",
+      "uid:places-637",
       "name:lhasa",
       "tree:places",
-      "tree:terms",
-      "tree:subjects",
-
+      // "tree:terms",
+      "ancestor_uids_generic:(places-427 subjects-8260 subjects-20 places-2)",
+      // "tree:subjects",
     ];
     var length = qlist.length;
     async.series(
