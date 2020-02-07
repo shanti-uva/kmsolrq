@@ -95,16 +95,16 @@ const KMASSETS_PREDEV_AUTH = {
 
 // TODO: ys2n: need to fix service name, to have a more proper Idenitifier (per kmaps asset type).
 
+
 var configSet = {
-  "read_client" :solr.createClient(KMTERMS_STAGE_UNAUTH),
-  "write_client":solr.createClient(KMASSETS_STAGE_AUTH),
-  "service_name":"stage",
-  "baseurl": "https://mandala-stage.shanti.virginia.edu",
-  "write_user": "solrprod",
-  "write_pass": "QiscMU5ho2q"
- // "write_user": "solradmin",
- // "write_pass": "IdskBsk013"
+  "read_client" :solr.createClient(KMTERMS_DEV_UNAUTH),
+  "write_client":solr.createClient(KMASSETS_DEV_AUTH),
+  "service_name":"dev",
+  "baseurl": "https://mandala-dev.shanti.virginia.edu",
+  "write_user": "solradmin",
+  "write_pass": "IdskBsk013"
 }
+
 configSet.write_client.basicAuth(configSet.write_user,configSet.write_pass);
 
 var config = {
@@ -139,11 +139,13 @@ module.exports = testCase({
       // "name:Chukha",
       // "ancestor_uids_generic:(places-427 subjects-8260)",
       // "uid:places-637",
-      "uid:places-637",
-      "name:lhasa",
+      // "uid:places-637",
+      // "name:lhasa",
       "tree:places",
+      "tree:subjects",
+      "tree:terms",
       // "tree:terms",
-      "ancestor_uids_generic:(places-427 subjects-8260 subjects-20 places-2)",
+      // "ancestor_uids_generic:(places-427 subjects-8260 subjects-20 places-2)",
       // "tree:subjects",
     ];
     var length = qlist.length;
