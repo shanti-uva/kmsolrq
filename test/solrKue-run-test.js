@@ -139,12 +139,14 @@ module.exports = testCase({
       // "name:Chukha",
       // "ancestor_uids_generic:(places-427 subjects-8260)",
       // "uid:places-637",
-      "uid:places-637",
-      "name:lhasa",
-      "tree:places",
-      // "tree:terms",
-      "ancestor_uids_generic:(places-427 subjects-8260 subjects-20 places-2)",
+      // "uid:places-637",
+      "uid:subjects-7299",
+      "ancestor_uids_generic:(subjects-20)",
+      // "ancestor_uids_generic:(places-427 subjects-8260 subjects-20 places-2)",
       // "tree:subjects",
+      // "name:lhasa",
+      // "tree:terms",
+      "tree:subjects",
     ];
     var length = qlist.length;
     async.series(
