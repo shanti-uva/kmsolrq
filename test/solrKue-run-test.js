@@ -141,12 +141,16 @@ module.exports = testCase({
       // "uid:places-637",
       // "uid:places-637",
       // "name:lhasa",
+      "uid:subjects-7299",
+      "ancestor_uids_generic:(subjects-20)",
       "tree:places",
       "tree:subjects",
       "tree:terms",
       // "tree:terms",
       // "ancestor_uids_generic:(places-427 subjects-8260 subjects-20 places-2)",
       // "tree:subjects",
+      // "name:lhasa",
+      // "tree:terms",
     ];
     var length = qlist.length;
     async.series(

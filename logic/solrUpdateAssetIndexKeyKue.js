@@ -86,7 +86,7 @@ var getAssetEntries = exports.getAssetEntries =
   };
 
 
-var lookupKmapIds = exports.getlookupKmapIds =
+var lookupKmapIds = exports.lookupKmapIds =
   function(kmapids) {
       // console.error("lookupKmapIds sees args = " + JSON.stringify(arguments));
       var kmapList = [];

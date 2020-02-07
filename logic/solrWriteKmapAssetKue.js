@@ -2,7 +2,7 @@ const DEBUG = false;
 const DEFAULT_ROWS = 50;
 const DEFAULT_CONCURRENCY = 3;
 const FORCE_OVERWRITE = false;
-const SCHEMA_VERSION = 20;
+const SCHEMA_VERSION = 21;
 
 var kue = require('kue');
 var check = require('type-check').typeCheck;
@@ -19,7 +19,7 @@ if (typeof localStorage === "undefined" || localStorage === null) {
 }
 
 var createQueue = exports.createQueue = function () {
-  var queue = kue.createQueue( { redis: { auth: '1HrAghEQAIZ9k7VbUgmY'} });
+  var queue = kue.createQueue({redis: {auth: '1HrAghEQAIZ9k7VbUgmY'}});
   queue.on("job enqueue", function () {
     if (DEBUG) {
       console.log("job queued " + JSON.stringify(arguments));
@@ -55,44 +55,184 @@ var getKmapEntries = exports.getKmapEntries =
     console.log("getKmapEntries(): ARGUMENTS: " + JSON.stringify({
       query: query,
       rows: rows,
-      start: start
+      start: start,
     }));
-    var q = read_client.createQuery().q(query).matchFilter("block_type", "parent").rows(rows).start(start);
 
-    async.setImmediate(function () {
-      read_client.search(q, function (err, resp) {
+    let main_query = read_client.createQuery()
+      .q(query)
+      .matchFilter("block_type", "parent")
+      .rows(rows)
+      .start(start);
+
+    // THIS WOULD BE THE WAY TO GET RELATED PLACES.  HOWEVER THE INDEX LACKS THE APPROPRIATE FIELDS TO DO THIS
+    // var feature_type_query =encodeURIComponent("{!terms f=feature_type_ids v=100}");
+    // var subq ="bloop:[subquery]";
+    // main_query.set("bloop.main_query=" + feature_type_query);
+    // main_query.set("fl=*," + subq);
+
+    console.log("QUERY:")
+    console.dir(main_query, true);
+
+    var cacheKMapDocs = function (resp, cache_cb) {
+      if (DEBUG) console.error("cacheKMapDocs: " + resp.response.docs.length);
+      // console.dir(resp, true);
+      let docs = resp.response.docs;
+      // Let's cache a map of the uid's and headers
+      for (var i = 0; i < docs.length; i++) {
+        var doc = docs[i];
+        // console.log("   -> " + doc.uid);
+        if (!localStorage.getItem(doc.uid)) {
+          console.log("Caching: " + doc.uid + " = " + doc.header);
+          localStorage.setItem(doc.uid, doc.header);
+        }
+      }
+      cache_cb(null, docs);
+    };
+    var readKMapEntry = function (query, read_cb) {
+      console.log("readKmapEntry: " + query);
+      read_client.search(query, function (err, resp) {
         if (err) {
           console.error("ERROR reading: " + err);
-          console.error(" attempted query: " + JSON.stringify(q));
+          console.error(" attempted query: " + JSON.stringify(main_query));
         } else {
           if (DEBUG) {
             console.log("####### Response received");
             console.log("numFound = " + resp.response.numFound);
             console.log("start = " + resp.response.start);
+            // console.dir(resp.response.docs.length,true);
           }
         }
-
-        async.setImmediate(function () {
-          var docs = [];
-          if (DEBUG && !err) console.log("calling back: " + docs.length + " docs");
-          if (err) console.error("error: " + err);
-
-          if (!err) {
-            docs = resp.response.docs;
-           // Let's cache a map of the uid's and headers
-            for (var i=0 ; i < docs.length; i++) {
-              var doc = docs[i];
-
-              if (!localStorage.getItem(doc.uid)) {
-                console.log("Caching: " + doc.uid + " = " + doc.header);
-                localStorage.setItem(doc.uid, doc.header);
-              }
-            }
-          }
-          callback(err, docs);
-        });
+        read_cb(err, resp);
       });
-    });
+    };
+
+    // note this is per single doc
+    var addRelatedPlaces = function (doc, related_cb) {
+      let uid = doc.uid;
+      let domain = "";
+      let id = 0;
+      [domain, id] = doc.uid.split('-');
+      if (DEBUG) {
+        console.error("addRelatedPlaces  uid    = " + uid + "  domain = " + domain + "  id     = " + id);
+      }
+
+      if (domain !== "subjects") {
+        // return unaltered doc
+        related_cb(null, doc);
+      } else {
+
+        if (DEBUG) console.log("########## Handling related places for subject: " + uid);
+
+        let collector = function (document) {
+          const ROWS = 300;
+          let next_start = 0;
+          let count = 0;
+          let more = false;
+
+          let inner = function() {};  // just a container function;
+
+
+          let next = function (next_callback) {
+            let related_query = read_client.createQuery().q("feature_type_ids:" + id).rows(ROWS).start(next_start).fl("uid");
+            read_client.search(related_query, function (err, rel_resp) {
+              if (err) {
+                console.error("ERROR reading: " + err);
+                console.error(" attempted query: " + JSON.stringify(related_query));
+                next_callback(err, null);
+                return;
+              } else {
+                if (DEBUG) {
+                  console.log("## Query:  " + JSON.stringify(related_query));
+                  console.log("####### Response received");
+                  console.log("numFound = " + rel_resp.response.numFound);
+                  console.log("start = " + rel_resp.response.start);
+                  // console.dir(rel_resp, true);
+                }
+              }
+
+              let numFound = rel_resp.response.numFound;
+              let start = rel_resp.response.start;
+              let rowsReturned = rel_resp.response.docs.length;
+              more = (start + rowsReturned < numFound);
+              next_start = start + rowsReturned + 1;
+
+              async.map(rel_resp.response.docs,
+                function (item, map_cb) {
+                  // console.log(" related for " + uid + ": " + item.uid);
+                  map_cb(null, item.uid);
+                },
+                function (err, relateds) {
+                  if (relateds && relateds.length) {
+                    if (!document.kmapid) {
+                      document.kmapid = [];
+                    }
+                    document.kmapid = document.kmapid.concat(relateds);
+                    console.log("relateds for " + document.uid + " =====> " +  relateds.length + " total:" + document.kmapid.length + " " + ((more)?"...":""));
+                    // console.log("kmapid =======> " + JSON.stringify(doc.kmapid));
+                  }
+                  next_callback(null, document);
+                });
+            });
+          }
+
+          var next_retry = async.retryable(
+            {
+              times: 5,
+              interval: function (attempts) {
+                var pause = 1000 * Math.pow(2, attempts);
+                console.log("pause on attempt " + attempts + ":" + pause);
+                return pause;
+              },
+              errorFilter: function (err) {
+                console.error("RETRY ON ERROR: " + err.code + " " + err.message);
+                if (err.code !== "ENOTFOUND") {
+                  console.error("Unknown error: " + JSON.stringify(err));
+                }
+                return true;
+              }
+            },
+            function (cb) {
+              next(cb);
+            }
+          );
+
+          inner.next = next_retry;
+          inner.done = function (document,done_cb) {
+            if (DEBUG) console.error(" more? " + more + " done? " + !more);
+            done_cb(null, !more);
+          }
+          return inner;
+        }(doc);
+
+        async.doUntil(collector.next, collector.done, function (err, resultDoc) {
+          related_cb(null, resultDoc);
+        });
+      }
+    };
+
+    async.waterfall(
+      [
+        async.apply(readKMapEntry, main_query),
+        cacheKMapDocs,
+        (docs, addrelated_cb) => {
+          async.map(docs, addRelatedPlaces,
+            (err, processed_docs) => {
+              // console.error("addRelatedPlaces returned: " + processed_docs.length );
+              addrelated_cb(null, processed_docs);
+            })
+        }
+      ],
+      function (err, results) {
+        if (DEBUG) console.error("END OF WATERFALL!");
+        if (err) {
+          console.error(err);
+        }
+        // console.log("result list: " + results.length);
+        callback(err, results);
+      }
+    );
+
+
   };
 
 
@@ -113,9 +253,9 @@ var recordKmap = exports.recordKmap = function recordKmap(names, ids, domain) {
     return;
   }
 
-  if (DEBUG) console.log(">>>  Processing names " + JSON.stringify(names));
+  // if (DEBUG) console.log(">>>  Processing names " + JSON.stringify(names));
 
-  for (var i=0; i < names.length; i++) {
+  for (var i = 0; i < names.length; i++) {
     var name = names[i];
     var id = ids[i];
     var uid = "";
@@ -124,14 +264,14 @@ var recordKmap = exports.recordKmap = function recordKmap(names, ids, domain) {
       uid = domain + "-" + id;
     } else {
       uid = id;
-      var checktype = id.match( /(\w+)\-\d+/);
+      var checktype = id.match(/(\w+)\-\d+/);
       if (!checktype || !checktype.length || checktype[1] !== domain) {
         throw new Error("CHECKTYPE: domain " + domain + " does not match id " + id + " with checktype = " + checktype[1]);
       }
     }
 
     // console.log("### id = " + id + " type: " + typeof id);
-     var old = localStorage.getItem(uid);
+    var old = localStorage.getItem(uid);
 
     if (DEBUG) {
       // console.log(">>> NAME: " + name + " >>> ID: " + id + ">>> UID: " + uid);
@@ -156,34 +296,34 @@ var recordKmap = exports.recordKmap = function recordKmap(names, ids, domain) {
       // console.log("SKIPPING: " + uid + "=>" + name);
     } else {
       console.log("PUTTING: " + uid + "=>" + name);
-      localStorage.setItem(uid,name);
+      localStorage.setItem(uid, name);
     }
 
   }
 }
 
-var lookupKmapIds = exports.getlookupKmapIds =
-  function(kmapids) {
-      // console.log("lookupKmapIds sees args = " + JSON.stringify(arguments));
-      var kmapList = [];
+var lookupKmapIds = exports.lookupKmapIds =
+  function (kmapids) {
+    // console.log("lookupKmapIds sees args = " + JSON.stringify(arguments));
+    var kmapList = [];
 
 
-      // console.log("KMAPIDS: " + JSON.stringify(kmapids));
+    // console.log("KMAPIDS: " + JSON.stringify(kmapids));
 
-      for (var i = 0; i < kmapids.length; i++) {
+    for (var i = 0; i < kmapids.length; i++) {
 
 
-        var kid = kmapids[i];
-        var name = localStorage.getItem(kid)
-        if (name === null) {
-          name = kid;
-        }
-        var entry = name + "|" + kid;
-        kmapList.push(entry);
+      var kid = kmapids[i];
+      var name = localStorage.getItem(kid)
+      if (name === null) {
+        name = kid;
       }
+      var entry = name + "|" + kid;
+      kmapList.push(entry);
+    }
 
-      // console.log("lookupKmapIds returning " + JSON.stringify(kmapList));
-      return kmapList;
+    // console.log("lookupKmapIds returning " + JSON.stringify(kmapList));
+    return kmapList;
   };
 
 var filterDone = exports.filterDone =
@@ -205,11 +345,6 @@ var filterDone = exports.filterDone =
 
 
 // TODO:  use a template to write the asset entries
-// var service = config.service;
-// var type = kmapEntry.tree;
-// var id = kmapEntry.uid.split("\-")[1];
-// var uid = service + "_" + kmapEntry.uid;
-// var caption = (kmapEntry.caption_eng) ? kmapEntry.caption_eng
 // TODO: use a map to list entries to copy?
 
 var createAssetEntry = exports.createAssetEntry =
@@ -217,6 +352,7 @@ var createAssetEntry = exports.createAssetEntry =
 
     // console.dir({ kmapEntry: kmapEntry });
 
+    // utility function
     function cleanEntries(entries) {
       var cleaned = [];
       for (var i = 0; i < entries.length; i++) {
@@ -240,7 +376,7 @@ var createAssetEntry = exports.createAssetEntry =
           var type = kmapEntry.tree;
           var id = kmapEntry.uid.split("\-")[1];
 
-          var prefix = (service !== "prod")?config.service + "_":""
+          var prefix = (service !== "prod") ? config.service + "_" : ""
           prefix = "";
           var uid = prefix + kmapEntry.uid;
 
@@ -253,17 +389,17 @@ var createAssetEntry = exports.createAssetEntry =
           var feature_type_ids = kmapEntry.feature_type_ids;
           var ftlist_subjects = [];
 
-          if (domain === "places"  && feature_types && feature_type_ids ) {
+          if (domain === "places" && feature_types && feature_type_ids) {
 
             recordKmap(feature_types, feature_type_ids, "subjects");
 
-            for (var i = 0 ; i < feature_type_ids.length; i++) {
+            for (var i = 0; i < feature_type_ids.length; i++) {
 
               if (DEBUG) {
                 // console.log("feature_type_ids = " + feature_type_ids);
                 // console.log(" f = " + feature_type_ids[i]);
               }
-              var f = lookupKmapIds([ "subjects-" + feature_type_ids[i] ]);
+              var f = lookupKmapIds(["subjects-" + feature_type_ids[i]]);
               // if (DEBUG) console.log("     FFFFEAT: " + JSON.stringify(f));
               ftlist_subjects.push(f[0]);
             }
@@ -308,14 +444,16 @@ var createAssetEntry = exports.createAssetEntry =
 
           // add other relateds
           if (kmapEntry.associated_subject_ids) {
-              relateds = _.uniq(_.concat(relateds,kmapEntry.associated_subject_ids)).map( function(x) { return "subjects-" + x});
+            relateds = _.uniq(_.concat(relateds, kmapEntry.associated_subject_ids)).map(function (x) {
+              return "subjects-" + x
+            });
           }
 
           var kmapList = lookupKmapIds(relateds);
 
           // DERIVE kmapid_is from ancestors_uids_generic
-          var generateId = function(x) {
-            var parts=x.split("-");
+          var generateId = function (x) {
+            var parts = x.split("-");
             var type = parts[0];
             var id = Number(parts[1]);
             id *= 100;
@@ -325,7 +463,7 @@ var createAssetEntry = exports.createAssetEntry =
             } else if (type === "subjects") {
               id += 2;
             } else if (type === "terms") {
-              id +=3;
+              id += 3;
             } else {
               console.error("UNKNOWN kmap type: " + type + " from kmapid " + x);
             }
@@ -345,9 +483,9 @@ var createAssetEntry = exports.createAssetEntry =
           }
 
           //  The current "template for writing asset enries for kmaps".
-          var stricts = [ kmapEntry.uid ];
+          var stricts = [kmapEntry.uid];
           if (relateds) {
-            stricts = _.concat(stricts,relateds);
+            stricts = _.concat(stricts, relateds);
           }
 
           var ancestorsTxt = kmapEntry.ancestors;
@@ -367,7 +505,7 @@ var createAssetEntry = exports.createAssetEntry =
 
           // console.dir(kmapEntry);
 
-          if (kmapEntry['ancestors_tib.alpha'] && !kmapEntry.ancestors ) {
+          if (kmapEntry['ancestors_tib.alpha'] && !kmapEntry.ancestors) {
             kmapEntry.ancestors = kmapEntry['ancestors_tib.alpha'];
           }
 
@@ -391,11 +529,10 @@ var createAssetEntry = exports.createAssetEntry =
               return domain + "-" + x
             });
 
-            if (DEBUG) console.log("UIDLIST = " + uidlist);
+            // if (DEBUG) console.log("UIDLIST = " + uidlist);
+            var parent_uid = (uidlist.length > 1) ? uidlist[uidlist.length - 2] : "";
 
-            var parent_uid = ( uidlist.length > 1 )?uidlist[uidlist.length - 2]:"";
-
-            if (DEBUG) console.log( "SELF = " + uid + " PARENT_UID = " + parent_uid);
+            // if (DEBUG) console.log( "SELF = " + uid + " PARENT_UID = " + parent_uid);
 
             recordKmap(kmapEntry.ancestors, uidlist, domain);
 
@@ -419,12 +556,6 @@ var createAssetEntry = exports.createAssetEntry =
                 kxlist_terms.push(x);
               }
             });
-
-            // if (DEBUG) {
-            //   console.log(" places = " + kxlist_places);
-            //   console.log(" subjects = " + kxlist_subjects);
-            //   console.log(" terms = " + kxlist_terms);
-            // }
           }
 
           var doc = {
@@ -435,7 +566,7 @@ var createAssetEntry = exports.createAssetEntry =
             "uid": uid,
             "uid_i": uid_i,
             "url_html": config.baseurl + "/" + type + "/" + id + "/overview/nojs",
-            "kmapid":kmapid,
+            "kmapid": kmapid,
             "kmapid_is": kmapid_is,
             "kmapid_strict": stricts,
             "text": text,
@@ -445,7 +576,7 @@ var createAssetEntry = exports.createAssetEntry =
             "name_latin": kmapEntry.name_latin,
             "title": header,
             "feature_types_ss": feature_types,
-            "associated_subjects_ss" : kmapEntry.associated_subjects,
+            "associated_subjects_ss": kmapEntry.associated_subjects,
             "ancestors_txt": ancestorsTxt,
             "ancestor_ids_is": ancestorIdsIs,
             // "ancestor_uids_generic": kmapEntry.ancestor_uids_generic,
@@ -455,7 +586,7 @@ var createAssetEntry = exports.createAssetEntry =
             "feature_types_idfacet": ftlist_subjects,
             "related_uid_ss": relateds,
             "position_i": kmapEntry.position_i,
-            "parent_uid" : parent_uid
+            "parent_uid": parent_uid
           };
 
           // map the associated data if available
@@ -465,7 +596,7 @@ var createAssetEntry = exports.createAssetEntry =
           if (kmapEntry.associated_subject_187_ss) doc["data_literary_period_ss"] = kmapEntry.associated_subject_187_ss;
           if (kmapEntry.associated_subject_5812_ss) doc["data_grammars_ss"] = kmapEntry.associated_subject_5812_ss;
           if (kmapEntry.associated_subject_272_ss) doc["data_tibet_and_himalayas_ss"] = kmapEntry.associated_subject_272_ss;
-          if (kmapEntry.associated_subject_9310_ss) doc["data_phoneme_ss"] =  kmapEntry.associated_subject_9310_ss;
+          if (kmapEntry.associated_subject_9310_ss) doc["data_phoneme_ss"] = kmapEntry.associated_subject_9310_ss;
 
           // clean captions
           var caption = null;
@@ -526,7 +657,8 @@ var createAssetEntry = exports.createAssetEntry =
           if (err) {
             console.error("ERROR on nextTick():  Returning blank document!\n\t" + " doc = " + doc);
 
-            err = null; doc = {};
+            err = null;
+            doc = {};
           }
 
           callback(err, doc)
@@ -553,8 +685,13 @@ var writeAssetDoc = exports.writeAssetDoc =
 
       if (!newdoc || Object.keys(newdoc).length === 0) {
         console.error("NEW DOC is empty...  Skipping...");
-        return false };
-      if (!olddoc || Object.keys(newdoc).length === 0) { return true };
+        return false
+      }
+      ;
+      if (!olddoc || Object.keys(newdoc).length === 0) {
+        return true
+      }
+      ;
 
       return (newdoc.schema_version_i > olddoc.schema_version_i);
     };
@@ -566,8 +703,8 @@ var writeAssetDoc = exports.writeAssetDoc =
       {
         times: 5,
         interval: function (attempts) {
-          var pause =  1000 * Math.pow(2, attempts);
-          console.log("pause on attempt "  + attempts + ":" + pause );
+          var pause = 1000 * Math.pow(2, attempts);
+          console.log("pause on attempt " + attempts + ":" + pause);
           return pause;
         },
         errorFilter: function (err) {
@@ -588,8 +725,8 @@ var writeAssetDoc = exports.writeAssetDoc =
         times: 5,
         interval: function (attempts) {
           console.error("check RETRY: attempt " + attempts);
-          var pause =  1000 * Math.pow(2, attempts);
-          console.log ("retry waiting " + pause);
+          var pause = 1000 * Math.pow(2, attempts);
+          console.log("retry waiting " + pause);
           return pause;
         },
         errorFilter: function (err) {
@@ -601,8 +738,8 @@ var writeAssetDoc = exports.writeAssetDoc =
         }
       },
       function (query, cb) {
-        write_client.get("select", query, function(doc,err) {
-          cb(doc,err);
+        write_client.get("select", query, function (doc, err) {
+          cb(doc, err);
         });
       }
     )
@@ -616,9 +753,9 @@ var writeAssetDoc = exports.writeAssetDoc =
         callback(err, null);
         return;
       }
-      if ( Object.keys(new_doc).length !== 0 && !existing.response.numFound || overwrite(new_doc, existing.response.docs[0])) {
+      if (Object.keys(new_doc).length !== 0 && !existing.response.numFound || overwrite(new_doc, existing.response.docs[0])) {
         var core = write_client.options.core;
-        console.error(new Date().toLocaleTimeString() + " WRITING ASSET DOC: [" + core + "] " + counter.count() + "/" + counter.number()  + " queued: " + counter.remain() + " " + new_doc.uid + ": " + JSON.stringify(new_doc.title));
+        console.error(new Date().toLocaleTimeString() + " WRITING ASSET DOC: [" + core + "] " + counter.count() + "/" + counter.number() + " queued: " + counter.remain() + " " + new_doc.uid + ": " + JSON.stringify(new_doc.title));
 
         add_retry(new_doc, function (err, obj) {
           if (err) {
@@ -669,14 +806,14 @@ var processQueue = exports.processQueue =
           title: function () {
             return job.data.title;
           },
-          remainingCallback: function(cb) {
-            queue.inactiveCount(function(err,count) {
+          remainingCallback: function (cb) {
+            queue.inactiveCount(function (err, count) {
               if (err) {
                 console.error("error getting inacctive count!")
               } else {
                 remain = count;
               }
-              cb(err,count);
+              cb(err, count);
             });
           },
           remain: function () {
@@ -712,7 +849,7 @@ var processQueue = exports.processQueue =
                 var n = output.length;
                 var p = Math.ceil(n / 4);
                 if (i === 0 || i === p || i === p * 2 || i === p * 3 || i === n) {
-                  counter.remainingCallback(function(err,remain) {
+                  counter.remainingCallback(function (err, remain) {
                     console.log(new Date().toLocaleTimeString() + " [ " + counter.title() + " ] count: " + counter.count() + " / " + counter.number() + " ( currently: " + doc.uid + " ) queued: " + remain);
                   });
                 }
