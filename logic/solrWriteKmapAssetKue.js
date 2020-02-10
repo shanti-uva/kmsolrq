@@ -2,7 +2,7 @@ const DEBUG = false;
 const DEFAULT_ROWS = 50;
 const DEFAULT_CONCURRENCY = 3;
 const FORCE_OVERWRITE = false;
-const SCHEMA_VERSION = 22;
+const SCHEMA_VERSION = 24;
 
 var kue = require('kue');
 var check = require('type-check').typeCheck;
@@ -474,7 +474,7 @@ var createAssetEntry = exports.createAssetEntry =
 
           var uid_i = generateId(type + "-" + id);
           var kmapid = [];
-          var kxlist_subjects = [];
+          var kxlist_subjects = ftlist_subjects;
           var kxlist_places = [];
           var kxlist_terms = [];
           if (kmapEntry.ancestor_uids_generic) {
