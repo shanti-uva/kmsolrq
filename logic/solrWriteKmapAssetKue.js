@@ -52,7 +52,7 @@ var addJob = exports.addJob = function (queue, jobspecs, cb) {
 
 var getKmapEntries = exports.getKmapEntries =
   function (read_client, query, rows, start, callback) {
-    console.log("getKmapEntries(): ARGUMENTS: " + JSON.stringify({
+    if(DEBUG) console.log("getKmapEntries(): ARGUMENTS: " + JSON.stringify({
       query: query,
       rows: rows,
       start: start,
@@ -70,9 +70,10 @@ var getKmapEntries = exports.getKmapEntries =
     // main_query.set("bloop.main_query=" + feature_type_query);
     // main_query.set("fl=*," + subq);
 
-    console.log("QUERY:")
-    console.dir(main_query, true);
-
+    if (DEBUG) {
+      console.log("QUERY:")
+      console.dir(main_query, true);
+    }
     var cacheKMapDocs = function (resp, cache_cb) {
       if (DEBUG) console.error("cacheKMapDocs: " + resp.response.docs.length);
       // console.dir(resp, true);
