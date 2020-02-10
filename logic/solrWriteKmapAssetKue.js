@@ -2,7 +2,7 @@ const DEBUG = false;
 const DEFAULT_ROWS = 50;
 const DEFAULT_CONCURRENCY = 3;
 const FORCE_OVERWRITE = false;
-const SCHEMA_VERSION = 21;
+const SCHEMA_VERSION = 22;
 
 var kue = require('kue');
 var check = require('type-check').typeCheck;

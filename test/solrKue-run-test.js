@@ -141,11 +141,11 @@ module.exports = testCase({
       // "uid:places-637",
       // "uid:places-637",
       // "name:lhasa",
+      "tree:places",
       "uid:subjects-7299",
       "ancestor_uids_generic:(subjects-20)",
-      "tree:places",
       "tree:subjects",
-      "tree:terms",
+      // "tree:terms",
       // "tree:terms",
       // "ancestor_uids_generic:(places-427 subjects-8260 subjects-20 places-2)",
       // "tree:subjects",
@@ -162,28 +162,28 @@ module.exports = testCase({
             jobs.forEach( function( job ) {
               console.log("job: " + job.id);
               job.remove( function(){
-                // console.log( 'removed ', job.id );
+                 console.log( 'removed ', job.id );
               });
             });
           });
-          kue.Job.rangeByState( 'inactive', 0, 3000, 'asc', function( err, jobs ) {
+          kue.Job.rangeByState( 'inactive', 0, 60000, 'asc', function( err, jobs ) {
             console.error("Removing " + jobs.length + " inactive jobs");
             jobs.forEach( function( job ) {
               job.remove( function(){
-                // console.log( 'removed ', job.id );
+                 console.log( 'removed ', job.id );
               });
             });
           });
           setTimeout(function() {
             done();
-          },2000);
+          },20000);
         },
         function (done) {
 
         console.error("qlist: " + JSON.stringify(qlist));
 
         async.map(qlist, function (q, next) {
-            console.error("### calling generateJobspecs with " + q + " " + JSON.stringify(arguments));
+            // console.error("### calling generateJobspecs with " + q + " " + JSON.stringify(arguments));
             kmapsKue.generateJobspecs(config, q, function (err, subquerylist) {
               console.error("mapping with " + subquerylist);
 
@@ -198,7 +198,7 @@ module.exports = testCase({
               async.map(subquerylist,
 
                 function (query, next2) {
-                  console.error("### calling addJob with " + JSON.stringify(query));
+                  // console.error("### calling addJob with " + JSON.stringify(query));
                   createAssetKue.addJob(queue, query, function (err, ret) {
                     console.error("CALLBACK FOR " + JSON.stringify(query));
                     if (err) {
