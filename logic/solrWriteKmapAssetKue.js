@@ -2,7 +2,7 @@ const DEBUG = false;
 const DEFAULT_ROWS = 50;
 const DEFAULT_CONCURRENCY = 3;
 const FORCE_OVERWRITE = false;
-const SCHEMA_VERSION = 24;
+const SCHEMA_VERSION = 27;
 
 var kue = require('kue');
 var check = require('type-check').typeCheck;
@@ -22,10 +22,12 @@ var createQueue = exports.createQueue = function () {
   var queue = kue.createQueue({redis: {auth: '1HrAghEQAIZ9k7VbUgmY'}});
   queue.on("job enqueue", function () {
     if (DEBUG) {
-      console.log("job queued " + JSON.stringify(arguments));
+       console.log("job queued " + JSON.stringify(arguments));
     }
   }).on("job complete", function () {
-    console.log("job done " + JSON.stringify(arguments));
+    if (DEBUG) {
+       console.log("job done " + JSON.stringify(arguments));
+    }
   }).on('progress', function (progress, data) {
     console.log('\r  job #' + job.id + ' ' + progress + '% complete with data ', data);
   });
@@ -90,7 +92,7 @@ var getKmapEntries = exports.getKmapEntries =
       cache_cb(null, docs);
     };
     var readKMapEntry = function (query, read_cb) {
-      console.log("readKmapEntry: " + query);
+      // console.log("readKmapEntry: " + query);
       read_client.search(query, function (err, resp) {
         if (err) {
           console.error("ERROR reading: " + err);
@@ -401,7 +403,7 @@ var createAssetEntry = exports.createAssetEntry =
                 // console.log(" f = " + feature_type_ids[i]);
               }
               var f = lookupKmapIds(["subjects-" + feature_type_ids[i]]);
-              // if (DEBUG) console.log("     FFFFEAT: " + JSON.stringify(f));
+              if (DEBUG) console.log("     FFFFEAT: " + JSON.stringify(f));
               ftlist_subjects.push(f[0]);
             }
           }
@@ -474,7 +476,7 @@ var createAssetEntry = exports.createAssetEntry =
 
           var uid_i = generateId(type + "-" + id);
           var kmapid = [];
-          var kxlist_subjects = ftlist_subjects;
+          var kxlist_subjects = [];
           var kxlist_places = [];
           var kxlist_terms = [];
           if (kmapEntry.ancestor_uids_generic) {
@@ -536,8 +538,10 @@ var createAssetEntry = exports.createAssetEntry =
             // if (DEBUG) console.log( "SELF = " + uid + " PARENT_UID = " + parent_uid);
 
             recordKmap(kmapEntry.ancestors, uidlist, domain);
+		
+            let feature_types = _.map(ftlist_subjects, function(x) { return x.split('|')[1] });
 
-            kmapid = _.uniq(_.sortBy(_.concat(stricts, relateds, kmapid, uidlist), function (x) {
+            kmapid = _.uniq(_.sortBy(_.concat(stricts, relateds, kmapid, uidlist, feature_types), function (x) {
               return x;
             }));
 
@@ -754,7 +758,7 @@ var writeAssetDoc = exports.writeAssetDoc =
         callback(err, null);
         return;
       }
-      if (Object.keys(new_doc).length !== 0 && !existing.response.numFound || overwrite(new_doc, existing.response.docs[0])) {
+      if (Object.keys(new_doc).length !== 0 && (!existing.response.numFound || overwrite(new_doc, existing.response.docs[0]))) {
         var core = write_client.options.core;
         console.error(new Date().toLocaleTimeString() + " WRITING ASSET DOC: [" + core + "] " + counter.count() + "/" + counter.number() + " queued: " + counter.remain() + " " + new_doc.uid + ": " + JSON.stringify(new_doc.title));
 
@@ -862,7 +866,7 @@ var processQueue = exports.processQueue =
         ],
         function (err, result) {
 
-          console.error("WATERFALL end");
+          if (DEBUG) console.error("WATERFALL end");
           // console.dir(result);
 
           if (err) {

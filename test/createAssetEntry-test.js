@@ -1,4 +1,4 @@
-const DEBUG = false;
+const DEBUG = true;
 var testCase = require('nodeunit').testCase;
 var solrKue = require('../logic/solrWriteKmapAssetKue.js');
 var solr = require('solr-client');
@@ -18,8 +18,8 @@ const KMTERMS_DEV_UNAUTH = {
           service : "kmaps",
           baseurl : "https://mandala.shanti.virginia.edu"
       };
-      const kmapid = "places-100000";
-      // const kmapid = "subjects-7299";
+      //const kmapid = "places-100000";
+      const kmapid = "subjects-7299";
       // const kmapid = "terms-8862";
       // const kmapid = "places-437";
       // const kmapid = "terms-115326";
@@ -46,7 +46,8 @@ const KMTERMS_DEV_UNAUTH = {
               }
             });
           }
-          test.done();
+          test.fail();
+          // test.done();
       });
     },
 
