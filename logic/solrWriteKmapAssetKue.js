@@ -538,7 +538,7 @@ var createAssetEntry = exports.createAssetEntry =
             // if (DEBUG) console.log( "SELF = " + uid + " PARENT_UID = " + parent_uid);
 
             recordKmap(kmapEntry.ancestors, uidlist, domain);
-		
+
             let feature_types = _.map(ftlist_subjects, function(x) { return x.split('|')[1] });
 
             kmapid = _.uniq(_.sortBy(_.concat(stricts, relateds, kmapid, uidlist, feature_types), function (x) {
@@ -580,6 +580,7 @@ var createAssetEntry = exports.createAssetEntry =
             "name_tibt": kmapEntry.name_tibt,
             "name_latin": kmapEntry.name_latin,
             "title": header,
+            "shapes_centroid_grptgeom": kmapEntry.shapes_centroid_grptgeom,
             "feature_types_ss": feature_types,
             "associated_subjects_ss": kmapEntry.associated_subjects,
             "ancestors_txt": ancestorsTxt,
@@ -795,7 +796,12 @@ var processQueue = exports.processQueue =
         var count = 0;
         var full_count = 0;
         var remain = 0;
+        var startTime = Date.now();
+
         var counter = {
+          time: function() {
+            return Math.floor((Date.now() - startTime)/1000);
+          },
           done: function () {
             count++;
           },

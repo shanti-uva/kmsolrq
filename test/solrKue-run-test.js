@@ -138,7 +138,7 @@ module.exports = testCase({
       // "name:bumthang",
       // "name:Chukha",
       // "ancestor_uids_generic:(places-427 subjects-8260)",
-      // "uid:places-637",
+      "uid:places-637",
       // "uid:places-637",
       // "name:lhasa",
       // "places-10000",
