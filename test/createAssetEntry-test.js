@@ -46,8 +46,8 @@ const KMTERMS_DEV_UNAUTH = {
               }
             });
           }
-          test.fail();
-          // test.done();
+          // test.fail();
+          test.done();
       });
     },
 

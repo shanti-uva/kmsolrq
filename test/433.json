@@ -1,0 +1,322 @@
+{
+  "tree": "places",
+  "feature_types": [
+    "Large Monastery"
+  ],
+  "feature_type_ids": [
+    "2942"
+  ],
+  "associated_subjects": [
+    "Geluk",
+    "Monk",
+    "Founding"
+  ],
+  "associated_subject_ids": [
+    "914",
+    "4939",
+    "4928"
+  ],
+  "has_shapes": true,
+  "has_altitudes": false,
+  "block_type": [
+    "parent"
+  ],
+  "_childDocuments_": [
+    {
+      "id": "places-433_featureType_2942",
+      "related_uid_s": "subjects-2942",
+      "origin_uid_s": "places-433",
+      "feature_type_path_s": "20/103/555/104/2942",
+      "block_child_type": [
+        "feature_types"
+      ],
+      "block_type": [
+        "child"
+      ],
+      "feature_type_name_s": "Large Monastery",
+      "related_names_t": [
+        "Large Monastery",
+        "大寺",
+        "གླིང་།"
+      ],
+      "feature_type_id_i": "2942",
+      "feature_type_caption_s": null,
+      "feature_type_caption_t": []
+    },
+    {
+      "id": "places-433_relatedSubject_914",
+      "related_uid_s": "subjects-914",
+      "origin_uid_s": "places-433",
+      "block_child_type": [
+        "related_subjects"
+      ],
+      "related_subjects_id_s": "subjects-914",
+      "related_subjects_header_s": "Geluk",
+      "related_names_t": [
+        "Geluk",
+        "dge lugs",
+        "格鲁",
+        "དགེ་ལུགས།"
+      ],
+      "related_subjects_path_s": "302/882/884/886/914",
+      "related_subjects_id_i": "914",
+      "related_subjects_caption_t": [
+        "<p>The Geluk tradition originated with the scholar Tsongkhapa and was the basis of the theocratic state founded by the Fifth Dalai Lama.</p>"
+      ],
+      "block_type": [
+        "child"
+      ],
+      "related_subjects_prefix_label_b": true,
+      "related_subjects_parent_show_b": false,
+      "related_subjects_root_show_b": true,
+      "related_subjects_display_string_s": "Buddhism > Geluk",
+      "related_subjects_numeric_value_i": null,
+      "related_subjects_string_value_s": "",
+      "related_subjects_time_units_t": [],
+      "related_subjects_caption_s": "<p>The Geluk tradition originated with the scholar Tsongkhapa and was the basis of the theocratic state founded by the Fifth Dalai Lama.</p>",
+      "related_subjects_parent_title_s": "Sarma"
+    },
+    {
+      "id": "places-433_relatedSubject_4939",
+      "related_uid_s": "subjects-4939",
+      "origin_uid_s": "places-433",
+      "block_child_type": [
+        "related_subjects"
+      ],
+      "related_subjects_id_s": "subjects-4939",
+      "related_subjects_header_s": "Monk",
+      "related_names_t": [
+        "Monk",
+        "grwa pa",
+        "僧侣",
+        "གྲྭ་པ་"
+      ],
+      "related_subjects_path_s": "6403/4938/5538/4939",
+      "related_subjects_id_i": "4939",
+      "related_subjects_caption_t": [],
+      "block_type": [
+        "child"
+      ],
+      "related_subjects_prefix_label_b": true,
+      "related_subjects_parent_show_b": false,
+      "related_subjects_root_show_b": true,
+      "related_subjects_display_string_s": "Population > Monk: 435",
+      "related_subjects_numeric_value_i": 435,
+      "related_subjects_string_value_s": "",
+      "related_subjects_time_units_t": [
+        "2010"
+      ],
+      "related_subjects_parent_title_s": "Religious Populations"
+    },
+    {
+      "id": "places-433_relatedSubject_4928",
+      "related_uid_s": "subjects-4928",
+      "origin_uid_s": "places-433",
+      "block_child_type": [
+        "related_subjects"
+      ],
+      "related_subjects_id_s": "subjects-4928",
+      "related_subjects_header_s": "Founding",
+      "related_names_t": [
+        "Founding"
+      ],
+      "related_subjects_path_s": "2743/4924/4928",
+      "related_subjects_id_i": "4928",
+      "related_subjects_caption_t": [],
+      "block_type": [
+        "child"
+      ],
+      "related_subjects_prefix_label_b": true,
+      "related_subjects_parent_show_b": false,
+      "related_subjects_root_show_b": true,
+      "related_subjects_display_string_s": "Physical Structure-Related & Organizational Events > Founding: by Jamchen Chöjé Shakya Yeshé (byams chen chos rje shAkya ye shes)",
+      "related_subjects_numeric_value_i": null,
+      "related_subjects_string_value_s": "by Jamchen Chöjé Shakya Yeshé (byams chen chos rje shAkya ye shes)",
+      "related_subjects_time_units_t": [
+        "1419"
+      ],
+      "related_subjects_parent_title_s": "Physical Structure-Related & Organizational Events"
+    },
+    {
+      "id": "places-433_is.contained.by_434",
+      "related_uid_s": "places-434",
+      "origin_uid_s": "places-433",
+      "block_child_type": [
+        "related_places"
+      ],
+      "related_places_id_s": "places-434",
+      "related_places_header_s": "Nyangdren",
+      "related_names_t": [
+        "ཉང་བྲན།",
+        "nyang bran",
+        "Nyangdren",
+        "Nyangrain",
+        "娘熱",
+        "Niangre",
+        "娘热"
+      ],
+      "related_places_path_s": "13735/13740/1/2/317/637/434",
+      "related_places_feature_type_s": "ADM4",
+      "related_places_feature_type_id_i": "4453",
+      "related_subjects_t": [
+        "ADM4",
+        "Township (without urban registered population)"
+      ],
+      "related_subject_ids": [
+        "4453",
+        "516"
+      ],
+      "related_places_feature_types_t": [
+        "ADM4",
+        "Township (without urban registered population)"
+      ],
+      "related_places_feature_type_ids": [
+        "4453",
+        "516"
+      ],
+      "related_places_relation_label_s": "is entirely located in",
+      "related_places_relation_code_s": "is.contained.by",
+      "related_kmaps_node_type": "parent",
+      "block_type": [
+        "child"
+      ]
+    },
+    {
+      "id": "places-433_is.affiliated.with_26523",
+      "related_uid_s": "places-26523",
+      "origin_uid_s": "places-433",
+      "block_child_type": [
+        "related_places"
+      ],
+      "related_places_id_s": "places-26523",
+      "related_places_header_s": "Chötrikhang Nup",
+      "related_names_t": [
+        "mchod khri khang nub",
+        "མཆོད་ཁྲི་ཁང་ནུབ།",
+        "Chötrikhang Nup",
+        "Choetrikhang West",
+        "Chötri Kangnub",
+        "mchod khri khang",
+        "མཆོད་ཁྲི་ཁང་།",
+        "Chötrikhang"
+      ],
+      "related_places_path_s": "13735/13740/1/2/317/637/26523",
+      "related_places_feature_type_s": "Townhouse",
+      "related_places_feature_type_id_i": "6887",
+      "related_subjects_t": [
+        "Stone",
+        "Mudbrick",
+        "Courtyard structure",
+        "Construction",
+        "Construction",
+        "Construction",
+        "Restoration",
+        "Stories",
+        "Townhouse",
+        "Small Multi-Storey Building without Courtyard"
+      ],
+      "related_subject_ids": [
+        "6894",
+        "6895",
+        "6933",
+        "2746",
+        "2746",
+        "2746",
+        "6805",
+        "6930",
+        "6887",
+        "7152"
+      ],
+      "related_places_feature_types_t": [
+        "Townhouse",
+        "Small Multi-Storey Building without Courtyard"
+      ],
+      "related_places_feature_type_ids": [
+        "6887",
+        "7152"
+      ],
+      "related_places_relation_label_s": "is affiliated with",
+      "related_places_relation_code_s": "is.affiliated.with",
+      "related_kmaps_node_type": "child",
+      "block_type": [
+        "child"
+      ]
+    },
+    {
+      "id": "places-433_is.affiliated.with_26524",
+      "related_uid_s": "places-26524",
+      "origin_uid_s": "places-433",
+      "block_child_type": [
+        "related_places"
+      ],
+      "related_places_id_s": "places-26524",
+      "related_places_header_s": "Chötrikhang Shar",
+      "related_names_t": [
+        "mchod khri khang shar",
+        "མཆོད་ཁྲི་ཁང་ཤར།",
+        "Chötrikhang Shar",
+        "Chötri Kangnub"
+      ],
+      "related_places_path_s": "13735/13740/1/2/317/637/26524",
+      "related_places_feature_type_s": "Townhouse",
+      "related_places_feature_type_id_i": "6887",
+      "related_subjects_t": [
+        "Stone",
+        "Massive structure",
+        "Construction",
+        "Destruction",
+        "Stories",
+        "Townhouse"
+      ],
+      "related_subject_ids": [
+        "6894",
+        "6934",
+        "2746",
+        "4925",
+        "6930",
+        "6887"
+      ],
+      "related_places_feature_types_t": [
+        "Townhouse"
+      ],
+      "related_places_feature_type_ids": [
+        "6887"
+      ],
+      "related_places_relation_label_s": "is affiliated with",
+      "related_places_relation_code_s": "is.affiliated.with",
+      "related_kmaps_node_type": "child",
+      "block_type": [
+        "child"
+      ]
+    },
+    {
+      "id": "places-433_shape_16761",
+      "block_child_type": [
+        "places_shape"
+      ],
+      "block_type": [
+        "child"
+      ],
+      "geometry_grptgeom": "{\"type\":\"Point\",\"coordinates\":[91.134999999994,29.6999999995065]}",
+      "area_f": 0.0,
+      "altitude_i": null,
+      "position_i": 1
+    },
+    {
+      "id": "places-433_shape_23844",
+      "block_child_type": [
+        "places_shape"
+      ],
+      "block_type": [
+        "child"
+      ],
+      "geometry_grptgeom": "{\"type\":\"MultiPolygon\",\"coordinates\":[[[[91.1306836794186,29.6994461719023],[91.1306834429123,29.6994589412079],[91.1315935666313,29.6992929696599],[91.131840318039,29.6993986324205],[91.132260219514,29.6996344637306],[91.1331281180762,29.6993784774038],[91.1337079786172,29.6988757453235],[91.1356218576288,29.6982257553514],[91.1348997688395,29.6969255475096],[91.1347287438761,29.6966804579146],[91.1342324236073,29.6958304699933],[91.1318677887588,29.6963335836015],[91.1306342370522,29.6973763052238],[91.1298797647044,29.6986173711145],[91.1306836794186,29.6994461719023]]]]}",
+      "area_f": null,
+      "altitude_i": null,
+      "position_i": 0
+    }
+  ],
+  "interactive_map_url": "http://www.thlib.org/places/maps/interactive/#fid:433",
+  "kmz_url": "http://shanti.virginia.edu/features/gis_resources/433.kmz",
+  "closest_fid_with_shapes": 433
+}
