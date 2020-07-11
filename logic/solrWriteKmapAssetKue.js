@@ -2,7 +2,7 @@ const DEBUG = false;
 const DEFAULT_ROWS = 50;
 const DEFAULT_CONCURRENCY = 3;
 const FORCE_OVERWRITE = false;
-const SCHEMA_VERSION = 27;
+const SCHEMA_VERSION = 28;
 
 var kue = require('kue');
 var check = require('type-check').typeCheck;
@@ -393,6 +393,8 @@ var createAssetEntry = exports.createAssetEntry =
           var feature_type_ids = kmapEntry.feature_type_ids;
           var ftlist_subjects = [];
 
+          var perspectives_ss = [];
+
           if (domain === "places" && feature_types && feature_type_ids) {
 
             recordKmap(feature_types, feature_type_ids, "subjects");
@@ -573,7 +575,7 @@ var createAssetEntry = exports.createAssetEntry =
               return result;
             }, {});
 
-            console.log("COLLECTED: ", Object.keys(collected));
+            perspectives_ss = Object.keys(collected);
 
           }
 
@@ -606,7 +608,9 @@ var createAssetEntry = exports.createAssetEntry =
             "feature_types_idfacet": ftlist_subjects,
             "related_uid_ss": relateds,
             "position_i": kmapEntry.position_i,
-            "parent_uid": parent_uid
+            "parent_uid": parent_uid,
+            "perspectives_ss": perspectives_ss,
+
           };
 
           // map the associated data if available
