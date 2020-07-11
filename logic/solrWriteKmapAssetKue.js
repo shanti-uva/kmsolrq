@@ -22,11 +22,11 @@ var createQueue = exports.createQueue = function () {
   var queue = kue.createQueue({redis: {auth: '1HrAghEQAIZ9k7VbUgmY'}});
   queue.on("job enqueue", function () {
     if (DEBUG) {
-       console.log("job queued " + JSON.stringify(arguments));
+      console.log("job queued " + JSON.stringify(arguments));
     }
   }).on("job complete", function () {
     if (DEBUG) {
-       console.log("job done " + JSON.stringify(arguments));
+      console.log("job done " + JSON.stringify(arguments));
     }
   }).on('progress', function (progress, data) {
     console.log('\r  job #' + job.id + ' ' + progress + '% complete with data ', data);
@@ -54,7 +54,7 @@ var addJob = exports.addJob = function (queue, jobspecs, cb) {
 
 var getKmapEntries = exports.getKmapEntries =
   function (read_client, query, rows, start, callback) {
-    if(DEBUG) console.log("getKmapEntries(): ARGUMENTS: " + JSON.stringify({
+    if (DEBUG) console.log("getKmapEntries(): ARGUMENTS: " + JSON.stringify({
       query: query,
       rows: rows,
       start: start,
@@ -132,7 +132,8 @@ var getKmapEntries = exports.getKmapEntries =
           let count = 0;
           let more = false;
 
-          let inner = function() {};  // just a container function;
+          let inner = function () {
+          };  // just a container function;
 
 
           let next = function (next_callback) {
@@ -170,7 +171,7 @@ var getKmapEntries = exports.getKmapEntries =
                       document.kmapid = [];
                     }
                     document.kmapid = document.kmapid.concat(relateds);
-                    console.log("relateds for " + document.uid + " =====> " +  relateds.length + " total:" + document.kmapid.length + " " + ((more)?"...":""));
+                    console.log("relateds for " + document.uid + " =====> " + relateds.length + " total:" + document.kmapid.length + " " + ((more) ? "..." : ""));
                     // console.log("kmapid =======> " + JSON.stringify(doc.kmapid));
                   }
                   next_callback(null, document);
@@ -200,7 +201,7 @@ var getKmapEntries = exports.getKmapEntries =
           );
 
           inner.next = next_retry;
-          inner.done = function (document,done_cb) {
+          inner.done = function (document, done_cb) {
             if (DEBUG) console.error(" more? " + more + " done? " + !more);
             done_cb(null, !more);
           }
@@ -539,7 +540,9 @@ var createAssetEntry = exports.createAssetEntry =
 
             recordKmap(kmapEntry.ancestors, uidlist, domain);
 
-            let feature_types = _.map(ftlist_subjects, function(x) { return x.split('|')[1] });
+            let feature_types = _.map(ftlist_subjects, function (x) {
+              return x.split('|')[1]
+            });
 
             kmapid = _.uniq(_.sortBy(_.concat(stricts, relateds, kmapid, uidlist, feature_types), function (x) {
               return x;
@@ -561,6 +564,17 @@ var createAssetEntry = exports.createAssetEntry =
                 kxlist_terms.push(x);
               }
             });
+
+            const collected = _.reduce(kmapEntry, (result, value, key) => {
+              const capt = key.match(/ancestor_id_([A-z_.]+)_path/);
+              if (capt && capt[0]) {
+                result[capt[0]] = 1;
+              }
+              return result;
+            }, {});
+
+            console.log("COLLECTED: ", Object.keys(collected));
+
           }
 
           var doc = {
@@ -799,8 +813,8 @@ var processQueue = exports.processQueue =
         var startTime = Date.now();
 
         var counter = {
-          time: function() {
-            return Math.floor((Date.now() - startTime)/1000);
+          time: function () {
+            return Math.floor((Date.now() - startTime) / 1000);
           },
           done: function () {
             count++;
