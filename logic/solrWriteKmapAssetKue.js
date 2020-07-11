@@ -567,8 +567,8 @@ var createAssetEntry = exports.createAssetEntry =
 
             const collected = _.reduce(kmapEntry, (result, value, key) => {
               const capt = key.match(/ancestor_id_([A-z_.]+)_path/);
-              if (capt && capt[0]) {
-                result[capt[0]] = 1;
+              if (capt && capt[1]) {
+                result[capt[1]] = 1;
               }
               return result;
             }, {});
