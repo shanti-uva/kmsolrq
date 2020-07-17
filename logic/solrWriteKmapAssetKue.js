@@ -622,6 +622,47 @@ var createAssetEntry = exports.createAssetEntry =
           if (kmapEntry.associated_subject_272_ss) doc["data_tibet_and_himalayas_ss"] = kmapEntry.associated_subject_272_ss;
           if (kmapEntry.associated_subject_9310_ss) doc["data_phoneme_ss"] = kmapEntry.associated_subject_9310_ss;
 
+
+          let collect = {};
+          Object.entries(kmapEntry).forEach(([name, value]) => {
+            // console.log("MAPPING name = " + name);
+            if (name.startsWith("associated_subject_")) {
+              // console.log("MAPPING GORNK");
+              // console.log("MAPPING name =", name);
+
+              const match = name.match(/associated_subject_(\d+)_([a-z]+)/);
+
+              if (match) {
+                console.log("MAPPING match = ", match);
+                const subject = "subjects-" + match[1];
+                const type = match[2];
+                console.log("MAPPING subject = ", subject);
+                console.log("MAPPING type = ", type);
+                console.log("MAPPING match = ", match);
+                console.log("MAPPING name = " + name + " value = " + value);
+
+                let field = "";
+                let final_value = "";
+                if (type == "ls") {
+                  field = "predicate_subject";
+                  final_value = "subjects-" + value[0];
+                } else if (type == "ss") {
+                  field = "predicate_label";
+                  final_value = value[0];
+                }
+
+                if (!collect[subject]) {
+                  collect[subject] = {}
+                }
+                ;
+                collect[subject][field] = final_value;
+                collect[subject]["relation_subject"] = subject;
+                collect[subject]["relation_label"] = lookupKmapIds([subject])[0].split('|')[0];
+              }
+            }
+          })
+          if (!_.isEmpty(collect))  { console.log("MAPPING COLLECTED: ", JSON.stringify(collect, undefined, 2)); }
+
           // clean captions
           var caption = null;
           if (kmapEntry.caption_eng) {
