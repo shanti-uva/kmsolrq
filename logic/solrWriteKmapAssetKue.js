@@ -2,7 +2,7 @@ const DEBUG = false;
 const DEFAULT_ROWS = 50;
 const DEFAULT_CONCURRENCY = 3;
 const FORCE_OVERWRITE = false;
-const SCHEMA_VERSION = 28;
+const SCHEMA_VERSION = 30;
 
 var kue = require('kue');
 var check = require('type-check').typeCheck;
@@ -633,13 +633,13 @@ var createAssetEntry = exports.createAssetEntry =
               const match = name.match(/associated_subject_(\d+)_([a-z]+)/);
 
               if (match) {
-                console.log("MAPPING match = ", match);
+                // console.log("MAPPING match = ", match);
                 const subject = "subjects-" + match[1];
                 const type = match[2];
-                console.log("MAPPING subject = ", subject);
-                console.log("MAPPING type = ", type);
-                console.log("MAPPING match = ", match);
-                console.log("MAPPING name = " + name + " value = " + value);
+                // console.log("MAPPING subject = ", subject);
+                // console.log("MAPPING type = ", type);
+                // console.log("MAPPING match = ", match);
+                // console.log("MAPPING name = " + name + " value = " + value);
 
                 let field = "";
                 let final_value = "";
@@ -661,7 +661,22 @@ var createAssetEntry = exports.createAssetEntry =
               }
             }
           })
-          if (!_.isEmpty(collect))  { console.log("MAPPING COLLECTED: ", JSON.stringify(collect, undefined, 2)); }
+          if (!_.isEmpty(collect))  {
+            // console.log("MAPPING COLLECTED: ", JSON.stringify(collect, undefined, 2));
+
+            let output = [];
+            Object.entries(collect).forEach(([name, entry]) => {
+              const pre = entry["predicate_label"] + "=" + entry["predicate_subject"];
+              const rel = entry["relation_label"] + "=" + entry["relation_subject"];
+
+              let newEntry = rel + "|" + pre;
+              output.push(newEntry);
+            });
+            if (output.length > 1) {
+              console.log("MAPPING NEW FIELD ", kmapEntry.uid, " : ", output);
+            }
+            doc['associated_subject_map_idfacet'] = output;
+          }
 
           // clean captions
           var caption = null;

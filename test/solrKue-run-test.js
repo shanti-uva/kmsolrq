@@ -138,14 +138,16 @@ module.exports = testCase({
       // "name:bumthang",
       // "name:Chukha",
       // "ancestor_uids_generic:(places-427 subjects-8260)",
-      "uid:places-637",
-      // "uid:places-637",
+      "uid:places-637", // lhasa
+      "uid:places-433", // sera monastery
+      "uid:terms-85193", // thod rgal/
+    // "uid:places-637",
       // "name:lhasa",
       // "places-10000",
       // "subjects-9297",
+      "tree:places",
+      "tree:subjects",
       "tree:terms",
-      // "tree:places",
-      // "tree:subjects",
       // "tree:terms",
       //"uid:subjects-7299",
       //"ancestor_uids_generic:(subjects-20)",
